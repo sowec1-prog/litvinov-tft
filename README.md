@@ -5,6 +5,7 @@ Samostatný projekt pro barevný dotykový ILI9341 panel `320 × 240` na šířk
 - `firmware/` — ESP32-S3 klient. Stahuje pouze malý JSON a bude vykreslovat lokální loga z LittleFS.
 - `server/` — nezávislé API pro hokej a fotbal. Zatím obsahuje testovací fixture data; stávající Litvínov OLED server nemění.
 - `assets/` — zdrojové assety pro desktopový náhled a později pro převod do LittleFS.
+- `firmware/data/logos/` — 14 znaků ELH a 16 znaků Chance Ligy pro sezonu 2026/27; manifest uchovává kód, zdroj a SHA-256 každého souboru.
 - `ui-preview.html` — klikací PC návrh obrazovek.
 
 ## Lokální test serveru

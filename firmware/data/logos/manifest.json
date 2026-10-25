@@ -1,0 +1,251 @@
+{
+  "season": "2026/27",
+  "sources": {
+    "hockey": "https://hokej.cz/tipsport-extraliga",
+    "football": "https://www.chanceliga.cz/tabulka/2027/serie?id_stage=1"
+  },
+  "hockey": [
+    {
+      "code": "CEB",
+      "name": "Banes Motor České Budějovice",
+      "file": "hockey/CEB.png",
+      "source_url": "https://www.hokej.cz/min.php?file=%2Ffiles%2Flogos%2F4zj2z-ceb.png&w=240",
+      "bytes": 37416,
+      "sha256": "c271264ef16a2bad7db440e7fc7ead1bd7fc62f2ccdddf4ca6a65d7a2e362452"
+    },
+    {
+      "code": "HKR",
+      "name": "Mountfield HK",
+      "file": "hockey/HKR.png",
+      "source_url": "https://www.hokej.cz/min.php?file=%2Ffiles%2Flogos%2Fj9qyt-hkr.png&w=240",
+      "bytes": 52883,
+      "sha256": "b8264b2b543cfeeaec6732d381aa4343aa04f072fec128a856698990351b916d"
+    },
+    {
+      "code": "KVA",
+      "name": "BYD Energie Karlovy Vary",
+      "file": "hockey/KVA.png",
+      "source_url": "https://www.hokej.cz/min.php?file=%2Ffiles%2Flogos%2Fhokejv-byd.png&w=240",
+      "bytes": 11311,
+      "sha256": "2b8a3fe9928393c75374c01b65bcfaaa7612298a0be68d77885d3494412c771c"
+    },
+    {
+      "code": "KLA",
+      "name": "Rytíři Kladno",
+      "file": "hockey/KLA.png",
+      "source_url": "https://www.hokej.cz/min.php?file=%2Ffiles%2Flogos%2F7wb9o-kla.png&w=240",
+      "bytes": 36759,
+      "sha256": "5426d9cab50399caee4b800dc3e396be9931329bc6ae532178594d62ac9ae9da"
+    },
+    {
+      "code": "KOM",
+      "name": "HC Kometa Brno",
+      "file": "hockey/KOM.png",
+      "source_url": "https://www.hokej.cz/min.php?file=%2Ffiles%2Flogos%2F8oo52-kom.png&w=240",
+      "bytes": 42012,
+      "sha256": "8ffdc6a2871c71f9889fd788e57d79475100be30e666d4f4429f81ce2c8605dc"
+    },
+    {
+      "code": "LIB",
+      "name": "Bílí Tygři Liberec",
+      "file": "hockey/LIB.png",
+      "source_url": "https://www.hokej.cz/min.php?file=%2Ffiles%2Flogos%2Fi5lg4-lib.png&w=240",
+      "bytes": 44652,
+      "sha256": "20372d6fd891e8a7c1245ce886b1f3c0cd3e15e1e8181fc6c6381953e7787d03"
+    },
+    {
+      "code": "LIT",
+      "name": "HC VERVA Litvínov",
+      "file": "hockey/LIT.png",
+      "source_url": "https://www.hokej.cz/min.php?file=%2Ffiles%2Flogos%2Fifboo-lit.png&w=240",
+      "bytes": 45555,
+      "sha256": "24cefa138d89a49ee807825211f4bb5a239201496d2c6474ea9a23daa2222025"
+    },
+    {
+      "code": "MBL",
+      "name": "BK Mladá Boleslav",
+      "file": "hockey/MBL.png",
+      "source_url": "https://www.hokej.cz/min.php?file=%2Ffiles%2Flogos%2Fk1yj3-mbl.png&w=240",
+      "bytes": 30273,
+      "sha256": "067bff3826036caad5ce33aff2d196a1fca47e9f9348a46b0f4d7f0fa90642c0"
+    },
+    {
+      "code": "OLO",
+      "name": "HC Olomouc",
+      "file": "hockey/OLO.png",
+      "source_url": "https://www.hokej.cz/min.php?file=%2Ffiles%2Flogos%2Fy4tmv-olo.png&w=240",
+      "bytes": 45809,
+      "sha256": "eeca27ceb201606a462bdbdf2e137236d5a244347876480e40498069b8f57903"
+    },
+    {
+      "code": "PCE",
+      "name": "HC Dynamo Pardubice",
+      "file": "hockey/PCE.png",
+      "source_url": "https://www.hokej.cz/min.php?file=%2Ffiles%2Flogos%2FPCE-2x.png&w=240",
+      "bytes": 13924,
+      "sha256": "a0030cca9bbb184079de4325eeef7c64239a505cb29103b480c5ea1b3d6ee4f4"
+    },
+    {
+      "code": "PLZ",
+      "name": "HC Škoda Plzeň",
+      "file": "hockey/PLZ.png",
+      "source_url": "https://www.hokej.cz/min.php?file=%2Ffiles%2Flogos%2Fpijgb-plz.png&w=240",
+      "bytes": 68372,
+      "sha256": "d2871e6d3023c96813943ed717157afb66532b4fd82037174a17a38af415a2ff"
+    },
+    {
+      "code": "SPA",
+      "name": "HC Sparta Praha",
+      "file": "hockey/SPA.png",
+      "source_url": "https://www.hokej.cz/min.php?file=%2Ffiles%2Flogos%2Fwueb1-spa.png&w=240",
+      "bytes": 6030,
+      "sha256": "ea446f6f1e6989044eb4d62f7bb97d4c316a50d0eb34c731861eaa2b70b6cc90"
+    },
+    {
+      "code": "TRI",
+      "name": "HC Oceláři Třinec",
+      "file": "hockey/TRI.png",
+      "source_url": "https://www.hokej.cz/min.php?file=%2Ffiles%2Flogos%2Fccek3-tri.png&w=240",
+      "bytes": 51714,
+      "sha256": "4e653181ea76397dcb9948112d1da1df77e7c49c4ddc7fba68eb925253b34209"
+    },
+    {
+      "code": "VIT",
+      "name": "HC VÍTKOVICE RIDERA",
+      "file": "hockey/VIT.png",
+      "source_url": "https://www.hokej.cz/min.php?file=%2Ffiles%2Flogos%2F65gcx-vit.png&w=240",
+      "bytes": 68867,
+      "sha256": "01790848716d6ba56f5243d87ebc7a03af4755945c0a42f944a299ecbbe79c93"
+    }
+  ],
+  "football": [
+    {
+      "code": "ART",
+      "name": "SK Artis Brno",
+      "file": "football/ART.png",
+      "source_url": "https://www.chanceliga.cz/photo/club/40x40/club_132.png?4",
+      "bytes": 27505,
+      "sha256": "69ccd5d0886c16af17fcc63367fdeba6c93c26b9313768c352e3cdfc4d9b7401"
+    },
+    {
+      "code": "BOH",
+      "name": "Bohemians Praha 1905",
+      "file": "football/BOH.png",
+      "source_url": "https://www.chanceliga.cz/photo/club/40x40/club_57.png?4",
+      "bytes": 78595,
+      "sha256": "cc5d9e7a02db9b5d02d63c192fed65842864aacf2b7a708b5e42c0fe7bc57982"
+    },
+    {
+      "code": "FCB",
+      "name": "FC Baník Ostrava",
+      "file": "football/FCB.png",
+      "source_url": "https://www.chanceliga.cz/photo/club/40x40/club_6.png?4",
+      "bytes": 4036,
+      "sha256": "5e3459777c3b792490dfcae6f7721bbda7ac0335ee69a2865a4d8d4625161d8c"
+    },
+    {
+      "code": "FCS",
+      "name": "1. FC Slovácko",
+      "file": "football/FCS.png",
+      "source_url": "https://www.chanceliga.cz/photo/club/40x40/club_4.png?4",
+      "bytes": 18386,
+      "sha256": "8de0a79cd6eb5a549043973980488b34f2717939958860df41ab9fb9a7faed5b"
+    },
+    {
+      "code": "FCZ",
+      "name": "FC Zlín",
+      "file": "football/FCZ.png",
+      "source_url": "https://www.chanceliga.cz/photo/club/40x40/club_36.png?4",
+      "bytes": 136679,
+      "sha256": "067f3b950289aeef74ad884666af2d0d1b0e60bfa28d56bf2afbddeaac809bd6"
+    },
+    {
+      "code": "FKJ",
+      "name": "FK Jablonec",
+      "file": "football/FKJ.png",
+      "source_url": "https://www.chanceliga.cz/photo/club/40x40/club_12.png?4",
+      "bytes": 10956,
+      "sha256": "8f31765de9876579aadf941b24f774acd5dcbcd3a3ce1c5ea75d0cdfc5b8bfe6"
+    },
+    {
+      "code": "FKP",
+      "name": "FK Pardubice",
+      "file": "football/FKP.png",
+      "source_url": "https://www.chanceliga.cz/photo/club/40x40/club_97.png?4",
+      "bytes": 8353,
+      "sha256": "60c0f6665b18f62af367acc5ed7418a1803c1eed476527e1fad1265c87976a6b"
+    },
+    {
+      "code": "HKR",
+      "name": "FC Hradec Králové",
+      "file": "football/HKR.png",
+      "source_url": "https://www.chanceliga.cz/photo/club/40x40/club_7.png?4",
+      "bytes": 20704,
+      "sha256": "d4fb4ac3642c70b917d2a2c8c8cd0b2acb5b8632ccb16a68e869e3f41ead7e23"
+    },
+    {
+      "code": "LIB",
+      "name": "FC Slovan Liberec",
+      "file": "football/LIB.png",
+      "source_url": "https://www.chanceliga.cz/photo/club/40x40/club_8.png?4",
+      "bytes": 71538,
+      "sha256": "105ab5d647d5134a9d7e5fe8162301fa22ad9ec10edd4c89fc2fd8fafa46cbad"
+    },
+    {
+      "code": "MBL",
+      "name": "FK Mladá Boleslav",
+      "file": "football/MBL.png",
+      "source_url": "https://www.chanceliga.cz/photo/club/40x40/club_14.png?4",
+      "bytes": 7933,
+      "sha256": "5fbd7d7789e25bd35c4be9a214fb28c24b5f084fa62ec4266104def90ed1a8fb"
+    },
+    {
+      "code": "PLZ",
+      "name": "FC Viktoria Plzeň",
+      "file": "football/PLZ.png",
+      "source_url": "https://www.chanceliga.cz/photo/club/40x40/club_9.png?4",
+      "bytes": 9996,
+      "sha256": "77478b7e04e59dedcb5c31f10aeff995d9882ef58a57a07d93d932e00b180a64"
+    },
+    {
+      "code": "SIG",
+      "name": "SK Sigma Olomouc",
+      "file": "football/SIG.png",
+      "source_url": "https://www.chanceliga.cz/photo/club/40x40/club_17.png?4",
+      "bytes": 7208,
+      "sha256": "c80e2af419876f2fb80a4fddbb39d2274b3a5816b02a3956ed1d54b2c3af700c"
+    },
+    {
+      "code": "SKS",
+      "name": "SK Slavia Praha",
+      "file": "football/SKS.png",
+      "source_url": "https://www.chanceliga.cz/photo/club/40x40/club_89.png?4",
+      "bytes": 12004,
+      "sha256": "e32034e8f60a00c41c0537ff284689f113bd4f203010dec932dc55e93a273ef6"
+    },
+    {
+      "code": "SPA",
+      "name": "AC Sparta Praha",
+      "file": "football/SPA.png",
+      "source_url": "https://www.chanceliga.cz/photo/club/40x40/club_5.png?4",
+      "bytes": 20778,
+      "sha256": "8122c3013ef909ed96e7ca00eb62bb9e9d745e01bc725fd57eff6c9546300084"
+    },
+    {
+      "code": "TEP",
+      "name": "FK Teplice",
+      "file": "football/TEP.png",
+      "source_url": "https://www.chanceliga.cz/photo/club/40x40/club_15.png?4",
+      "bytes": 27241,
+      "sha256": "cc219a0051fa5183c48ad4eafec71b3c727fec02da61d0a7c6fb3ad45d6c1c18"
+    },
+    {
+      "code": "ZBR",
+      "name": "FC Zbrojovka Brno",
+      "file": "football/ZBR.png",
+      "source_url": "https://www.chanceliga.cz/photo/club/40x40/club_11.png?4",
+      "bytes": 17606,
+      "sha256": "08333cfa03a9cff88604140035157f80ae555a420462b3b34e65695786f405a3"
+    }
+  ]
+}
