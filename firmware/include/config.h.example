@@ -5,6 +5,11 @@
 #define WIFI_PASSWORD "YOUR_WIFI_PASSWORD"
 #define TFT_API_BASE_URL "http://192.168.0.10:8080"
 
+// LAN OTA only. Use a unique password of at least 12 characters in real config.h.
+// Never publish this value and never expose ESP OTA ports to the Internet.
+#define OTA_HOSTNAME "litvinov-tft"
+#define OTA_PASSWORD "CHANGE_ME_TO_A_LONG_UNIQUE_OTA_PASSWORD"
+
 // Fill only after confirming the labels on the back of the physical TFT.
 // Do not connect 5 V logic directly to ESP32-S3 GPIO.
 #define TFT_SCK_PIN -1

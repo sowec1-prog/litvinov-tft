@@ -41,8 +41,9 @@ Panel vypočítává odpočet sám mezi poll intervaly: dny → hodiny v den zá
 1. Zkopíruj `firmware/include/config.h.example` jako `firmware/include/config.h`.
 2. Vyplň pouze lokálně Wi-Fi a adresu serveru. `config.h` je ignorován Gitem.
 3. Než se připojí TFT, první upload je pouze síťový/JSON test; neobsahuje ovladač displeje ani dotyku.
+4. Vyplň lokálně jedinečné `OTA_PASSWORD` (minimálně 12 znaků). První upload firmware musí proběhnout přes USB; následné firmware a LittleFS aktualizace mohou běžet přes ArduinoOTA jen v domácí LAN.
 
-Loga budou při dokončení firmware nahrána do LittleFS v ESP32-S3. Žádné logo se nebude stahovat při běžném vykreslování.
+Loga budou při dokončení firmware nahrána do LittleFS v ESP32-S3. Žádné logo se nebude stahovat při běžném vykreslování. OTA port se nikde nevystavuje do internetu.
 
 ## Stav ověření
 
