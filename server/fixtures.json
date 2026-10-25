@@ -1,0 +1,16 @@
+{
+  "hockey": {
+    "competition": "Tipsport extraliga",
+    "home": {"code": "LIT", "name": "HC VERVA Litvínov", "logo": "litvinov"},
+    "away": {"code": "KOM", "name": "HC Kometa Brno", "logo": "kometa"},
+    "match_start": "2026-10-27T18:00:00+01:00",
+    "match_duration_seconds": 10800
+  },
+  "football": {
+    "competition": "Chance Liga",
+    "home": {"code": "SPA", "name": "AC Sparta Praha", "logo": "sparta"},
+    "away": {"code": "SLO", "name": "1. FC Slovácko", "logo": "slovacko"},
+    "match_start": "2026-11-15T15:00:00+01:00",
+    "match_duration_seconds": 7200
+  }
+}

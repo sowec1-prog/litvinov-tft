@@ -1,0 +1,14 @@
+# Local ESP configuration: never commit credentials or per-device pin map.
+firmware/include/config.h
+
+# PlatformIO
+firmware/.pio/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Editor/OS
+.vscode/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,17 @@
+#pragma once
+
+// Copy this file to config.h. config.h is deliberately ignored by Git.
+#define WIFI_SSID "YOUR_2_4_GHZ_WIFI"
+#define WIFI_PASSWORD "YOUR_WIFI_PASSWORD"
+#define TFT_API_BASE_URL "http://192.168.0.10:8080"
+
+// Fill only after confirming the labels on the back of the physical TFT.
+// Do not connect 5 V logic directly to ESP32-S3 GPIO.
+#define TFT_SCK_PIN -1
+#define TFT_MOSI_PIN -1
+#define TFT_MISO_PIN -1
+#define TFT_CS_PIN -1
+#define TFT_DC_PIN -1
+#define TFT_RST_PIN -1
+#define TFT_BACKLIGHT_PIN -1
+#define TOUCH_CS_PIN -1
