@@ -1,8 +1,8 @@
-# Litvínov & Sparta TFT
+# Litvínov, Sparta & Slavia TFT
 
 Samostatný projekt pro barevný dotykový panel ILI9341 `320 × 240` na šířku a ESP32-S3 DevKitC-1 N16R8.
 
-- `firmware/` — klient ESP32-S3, který vykresluje hokej Litvínova a fotbal Sparty.
+- `firmware/` — klient ESP32-S3, který vykresluje hokej Litvínova a fotbal Sparty nebo Slavie.
 - `firmware/data/logos/` — 14 znaků ELH a 16 znaků Chance Ligy; sady jsou striktně oddělené podle sportu.
 - `assets/` — zdrojové assety a náhledy.
 - `server/` — původní lokální vývojový harness; TFT jej při běžném provozu nepoužívá.
@@ -13,12 +13,25 @@ TFT je nezávislé na PC. Data čte pouze po HTTPS z veřejného serveru:
 
 ```text
 https://litvinov-server.onrender.com/api/v1/sport/hockey
-https://litvinov-server.onrender.com/api/v1/sport/football
+https://litvinov-server.onrender.com/api/v1/sport/football?team=SPA
+https://litvinov-server.onrender.com/api/v1/sport/football?team=SKS
 ```
 
 - Hokej: normalizovaná data pro Litvínov, včetně aktuálního pořadí a gólových událostí.
-- Fotbal: oficiální kalendář AC Sparta Praha a pořadí z oficiální tabulky Chance Ligy.
+- Fotbal: veřejný server má dva profily: `SPA` (AC Sparta Praha) a `SKS` (SK Slavia Praha); každý vrací vlastní oficiální rozpis a pořadí z Chance Ligy.
 - Veřejný server vrací cache okamžitě a data obnovuje na pozadí, aby ESP nečekalo na externí zdroje.
+
+## Varianty firmware
+
+Jeden společný zdroj má dva PlatformIO buildy. Hokej, Wi-Fi portál, OTA a zapojení jsou v obou shodné; mění se pouze fotbalový profil a API dotaz.
+
+```bash
+cd firmware
+uvx --from platformio platformio run -e sparta
+uvx --from platformio platformio run -e slavia
+```
+
+Pro nový druhý displej se nejdřív nahraje přes USB varianta `slavia`; potom lze používat OTA v domácí LAN.
 
 ## Wi-Fi a OTA
 

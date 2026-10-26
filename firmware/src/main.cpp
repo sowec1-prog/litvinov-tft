@@ -28,6 +28,12 @@
 #ifndef TFT_RESET_WIFI_ON_BOOT
 #define TFT_RESET_WIFI_ON_BOOT 0
 #endif
+#ifndef TFT_FOOTBALL_TEAM_CODE
+#define TFT_FOOTBALL_TEAM_CODE "SPA"
+#endif
+#ifndef TFT_FOOTBALL_TEAM_LABEL
+#define TFT_FOOTBALL_TEAM_LABEL "SPARTA"
+#endif
 
 static constexpr uint32_t POLL_INTERVAL_MS = 30000;
 static constexpr uint16_t TOP_BAR_H = 28;
@@ -270,7 +276,8 @@ void drawTopBar() {
   tft.setTextColor(ILI9341_WHITE);
   tft.setCursor(5, 10);
   if (screen == FOOTBALL) {
-    tft.print("SPARTA ");
+    tft.print(TFT_FOOTBALL_TEAM_LABEL);
+    tft.print(" ");
     tft.print(match.tablePosition > 0 ? String("#") + match.tablePosition : "-");
   } else {
     tft.print("LITVINOV ");
@@ -313,7 +320,7 @@ void drawHome() {
   tft.setTextSize(2);
   tft.setTextColor(LIT_RED);
   tft.setCursor(42, 142); tft.print("FOTBAL");
-  tft.setCursor(44, 160); tft.print("SPARTA");
+  tft.setCursor(44, 160); tft.print(TFT_FOOTBALL_TEAM_LABEL);
   tft.setTextColor(LIME);
   tft.setCursor(192, 142); tft.print("HOKEJ");
   tft.setCursor(177, 160); tft.print("LITVINOV");
@@ -483,7 +490,8 @@ void handleGoalCue() {
 void fetchSelectedSport() {
   const char *sport = screen == FOOTBALL ? "football" : "hockey";
   HTTPClient http;
-  const String url = String(TFT_API_BASE_URL) + "/api/v1/sport/" + sport;
+  String url = String(TFT_API_BASE_URL) + "/api/v1/sport/" + sport;
+  if (screen == FOOTBALL) url += "?team=" TFT_FOOTBALL_TEAM_CODE;
   http.setTimeout(8000);
   if (!http.begin(url)) { match.statusText = "CHYBA API"; needsRedraw = true; return; }
   const int code = http.GET();
@@ -495,7 +503,7 @@ void fetchSelectedSport() {
   if (error) { match.statusText = "JSON " + String(error.c_str()); needsRedraw = true; return; }
   match.state = doc["state"] | "scheduled";
   match.competition = doc["competition"] | "";
-  match.homeCode = doc["home"]["code"] | (screen == HOCKEY ? "LIT" : "SPA");
+  match.homeCode = doc["home"]["code"] | (screen == HOCKEY ? "LIT" : TFT_FOOTBALL_TEAM_CODE);
   match.awayCode = doc["away"]["code"] | "?";
   match.homeLogo = doc["home"]["logo"] | match.homeCode;
   match.awayLogo = doc["away"]["logo"] | match.awayCode;
@@ -530,10 +538,10 @@ void openScreen(Screen next) {
   } else if (screen == FOOTBALL) {
     match = MatchData();
     match.state = "scheduled";
-    match.homeCode = "SPA";
-    match.awayCode = "SLO";
-    match.homeLogo = "sparta";
-    match.awayLogo = "slovacko";
+    match.homeCode = TFT_FOOTBALL_TEAM_CODE;
+    match.awayCode = "?";
+    match.homeLogo = TFT_FOOTBALL_TEAM_CODE;
+    match.awayLogo = "";
     match.statusText = "NACITAM FOTBAL";
     match.tablePosition = 0;
   }
