@@ -6,8 +6,7 @@ Samostatný projekt pro barevný dotykový panel ILI9341 `320 × 240` na šířk
 - `firmware/data/logos/` — 14 znaků ELH a 16 znaků Chance Ligy; sady jsou striktně oddělené podle sportu.
 - `assets/` — zdrojové assety a náhledy.
 
-Provozní data poskytuje veřejný server [`litvinov-server`](https://github.com/sowec1-prog/litvinov-server), nasazený na `https://litvinov-server.onrender.com`. Lokální server, bridge ani běžící PC nejsou pro provoz potřeba.
-
+Provozní data poskytuje veřejný server [`litvinov-server`](https://github.com/sowec1-prog/litvinov-server), nasazený na `https://litvinov-server.onrender.com`.
 ## Architektura
 
 TFT je nezávislé na PC. Data čte pouze po HTTPS z veřejného serveru:
