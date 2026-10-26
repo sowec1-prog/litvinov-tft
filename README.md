@@ -1,52 +1,45 @@
 # Litvínov & Sparta TFT
 
-Samostatný projekt pro barevný dotykový ILI9341 panel `320 × 240` na šířku a ESP32-S3 DevKitC-1 N16R8.
+Samostatný projekt pro barevný dotykový panel ILI9341 `320 × 240` na šířku a ESP32-S3 DevKitC-1 N16R8.
 
-- `firmware/` — ESP32-S3 klient. Stahuje pouze malý JSON a bude vykreslovat lokální loga z LittleFS.
-- `server/` — nezávislé API pro hokej a fotbal. Zatím obsahuje testovací fixture data; stávající Litvínov OLED server nemění.
-- `assets/` — zdrojové assety pro desktopový náhled a později pro převod do LittleFS.
-- `firmware/data/logos/` — 14 znaků ELH a 16 znaků Chance Ligy pro sezonu 2026/27; manifest uchovává kód, zdroj a SHA-256 každého souboru.
-- `ui-preview.html` — klikací PC návrh obrazovek.
+- `firmware/` — klient ESP32-S3, který vykresluje hokej Litvínova a fotbal Sparty.
+- `firmware/data/logos/` — 14 znaků ELH a 16 znaků Chance Ligy; sady jsou striktně oddělené podle sportu.
+- `assets/` — zdrojové assety a náhledy.
+- `server/` — původní lokální vývojový harness; TFT jej při běžném provozu nepoužívá.
 
-## Lokální test serveru
+## Architektura
 
-```bash
-cd server
-python -m unittest -v
-python app.py
+TFT je nezávislé na PC. Data čte pouze po HTTPS z veřejného serveru:
+
+```text
+https://litvinov-server.onrender.com/api/v1/sport/hockey
+https://litvinov-server.onrender.com/api/v1/sport/football
 ```
 
-Ve druhém terminálu:
+- Hokej: normalizovaná data pro Litvínov, včetně aktuálního pořadí a gólových událostí.
+- Fotbal: oficiální kalendář AC Sparta Praha a pořadí z oficiální tabulky Chance Ligy.
+- Veřejný server vrací cache okamžitě a data obnovuje na pozadí, aby ESP nečekalo na externí zdroje.
 
-```bash
-curl http://127.0.0.1:8080/healthz
-curl http://127.0.0.1:8080/api/v1/sport/hockey
-curl http://127.0.0.1:8080/api/v1/sport/football
-```
-
-API je zatím dostupné pouze lokálně na `127.0.0.1:8080`; neotevírá port do internetu.
-
-## Kontrakt pro panel
-
-`GET /api/v1/sport/{hockey|football}` vrací mimo jiné:
-
-- `state`: `scheduled`, `live` nebo `finished`
-- domácí a hostující tým, včetně krátkého kódu a klíče loga
-- `match_start_epoch`, `server_epoch`, `is_match_day`, `timezone`
-
-Panel vypočítává odpočet sám mezi poll intervaly: dny → hodiny v den zápasu → minuty v poslední hodině → `MM:SS` v posledních 10 minutách.
-
-## Firmware
+## Wi-Fi a OTA
 
 1. Zkopíruj `firmware/include/config.h.example` jako `firmware/include/config.h`.
-2. Vyplň pouze lokálně Wi-Fi a adresu serveru. `config.h` je ignorován Gitem.
-3. Než se připojí TFT, první upload je pouze síťový/JSON test; neobsahuje ovladač displeje ani dotyku.
-4. Vyplň lokálně jedinečné `OTA_PASSWORD` (minimálně 12 znaků). První upload firmware musí proběhnout přes USB; následné firmware a LittleFS aktualizace mohou běžet přes ArduinoOTA jen v domácí LAN.
+2. Vyplň Wi-Fi, veřejnou adresu API a jedinečné `OTA_PASSWORD` pouze lokálně. `config.h` je ignorován Gitem.
+3. První OTA-capable upload se provádí přes USB; další aktualizace firmware nebo LittleFS přes ArduinoOTA pouze v LAN.
+4. Pokud se TFT dvě minuty nepřipojí k Wi-Fi, otevře vlastní hotspot `Litvinov-TFT-Setup`. Na displeji ukáže adresu `192.168.4.1`, kde lze uložit novou 2,4GHz Wi-Fi.
 
-Loga budou při dokončení firmware nahrána do LittleFS v ESP32-S3. Žádné logo se nebude stahovat při běžném vykreslování. OTA port se nikde nevystavuje do internetu.
+Nikdy nevystavuj OTA port do internetu a nikdy nepřipojuj 5V signál přímo na GPIO ESP32-S3.
 
-## Stav ověření
+## Ověřený hardware
 
-- Serverové unit testy: 3/3 úspěšné.
-- Lokální `/healthz` a hokejové API: ověřené.
-- Firmware sestaven pro vlastní profil ESP32-S3 DevKitC-1 N16R8 (16 MB flash / 8 MB OPI PSRAM); hardware, TFT pin map, dotyk a flash ESP32-S3: zatím neprováděny.
+- ESP32-S3 DevKitC-1 N16R8: 16 MB flash, 8 MB OPI PSRAM.
+- ILI9341 + XPT2046: SPI `SCK=12`, `MOSI=11`, `MISO=13`; TFT `CS=10`, `DC=9`, `RST=14`, `BL=21`; dotyk `CS=8`, `IRQ=18`.
+- TFT, dotyk, Wi-Fi konfigurační portál a OTA byly fyzicky ověřeny.
+
+## Ověření
+
+```bash
+cd firmware
+uvx --from platformio platformio run
+```
+
+Firmware používá samostatné barevné bitmapy týmů pro hokej a fotbal, loga soutěží MOL Cup / Chance Liga, český čas `Europe/Prague` a neblokující hokejovou gólovou animaci.

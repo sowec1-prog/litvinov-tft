@@ -4,6 +4,9 @@ firmware/include/config.h
 # PlatformIO
 firmware/.pio/
 
+# Local full-flash backups made before USB programming.
+backups/
+
 # Python
 __pycache__/
 *.py[cod]
