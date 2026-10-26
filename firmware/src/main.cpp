@@ -1,7 +1,10 @@
 #include <Arduino.h>
 #include <ArduinoOTA.h>
 #include <HTTPClient.h>
+#include <HTTPUpdate.h>
+#include <Update.h>
 #include <WiFiClientSecure.h>
+#include <mbedtls/sha256.h>
 #include <WiFi.h>
 #include <WebServer.h>
 #include <DNSServer.h>
@@ -18,6 +21,7 @@
 #include "hockey_team_logos.h"
 #include "football_team_logos.h"
 #include "competition_logos.h"
+#include "remote_ota_ca.h"
 #include "config.h"
 
 #ifndef TFT_SETUP_AP_SSID
@@ -41,8 +45,15 @@
 #ifndef TFT_RGB_LED_COUNT
 #define TFT_RGB_LED_COUNT 1
 #endif
+#ifndef TFT_REMOTE_UPDATE_CHANNEL
+#define TFT_REMOTE_UPDATE_CHANNEL "sparta"
+#endif
+#ifndef TFT_FIRMWARE_VERSION
+#define TFT_FIRMWARE_VERSION "1.3.0"
+#endif
 
 static constexpr uint32_t POLL_INTERVAL_MS = 30000;
+static constexpr uint32_t REMOTE_UPDATE_CHECK_MS = 15UL * 60UL * 1000UL;
 static constexpr uint16_t TOP_BAR_H = 28;
 static constexpr uint16_t BACKGROUND = ILI9341_BLACK;
 static constexpr uint16_t PANEL = 0x10C4;  // preview CSS #101823
@@ -94,6 +105,7 @@ struct MatchData {
 MatchData match;
 
 uint32_t lastPoll = 0;
+uint32_t lastRemoteUpdateCheck = 0;
 uint32_t lastTouch = 0;
 bool needsRedraw = true;
 bool otaReady = false;
@@ -545,6 +557,67 @@ void handleGoalCue() {
   lastGoalFrame = 0;
 }
 
+void checkRemoteFirmwareUpdate() {
+  if (wifiSetupPortalActive) return;
+  const String manifestUrl = String(TFT_API_BASE_URL) + "/api/v1/tft/firmware?channel=" + TFT_REMOTE_UPDATE_CHANNEL + "&current=" + TFT_FIRMWARE_VERSION;
+  WiFiClientSecure manifestClient;
+  manifestClient.setCACert(kRemoteOtaRootCa);
+  HTTPClient manifestHttp;
+  manifestHttp.setTimeout(12000);
+  if (!manifestHttp.begin(manifestClient, manifestUrl)) return;
+  const int manifestCode = manifestHttp.GET();
+  if (manifestCode != HTTP_CODE_OK) { manifestHttp.end(); return; }
+  JsonDocument manifest;
+  const DeserializationError manifestError = deserializeJson(manifest, manifestHttp.getString());
+  manifestHttp.end();
+  if (manifestError || !(manifest["available"] | false)) return;
+  const String version = manifest["version"] | "";
+  const String binaryUrl = manifest["url"] | "";
+  const String expectedSha256 = manifest["sha256"] | "";
+  if (version.isEmpty() || binaryUrl.indexOf("https://") != 0 || expectedSha256.length() != 64) return;
+
+  WiFiClientSecure firmwareClient;
+  firmwareClient.setCACert(kRemoteOtaRootCa);
+  HTTPClient firmwareHttp;
+  firmwareHttp.setTimeout(20000);
+  if (!firmwareHttp.begin(firmwareClient, binaryUrl)) return;
+  const int firmwareCode = firmwareHttp.GET();
+  const int contentLength = firmwareHttp.getSize();
+  if (firmwareCode != HTTP_CODE_OK || contentLength <= 0 || !Update.begin(contentLength, U_FLASH)) {
+    firmwareHttp.end();
+    return;
+  }
+
+  mbedtls_sha256_context sha;
+  mbedtls_sha256_init(&sha);
+  mbedtls_sha256_starts_ret(&sha, 0);
+  WiFiClient *stream = firmwareHttp.getStreamPtr();
+  uint8_t buffer[1024];
+  int remaining = contentLength;
+  bool writeFailed = false;
+  while (remaining > 0) {
+    const size_t received = stream->readBytes(buffer, min<int>(sizeof(buffer), remaining));
+    if (received == 0) { writeFailed = true; break; }
+    mbedtls_sha256_update_ret(&sha, buffer, received);
+    if (Update.write(buffer, received) != received) { writeFailed = true; break; }
+    remaining -= received;
+  }
+  uint8_t digest[32];
+  mbedtls_sha256_finish_ret(&sha, digest);
+  mbedtls_sha256_free(&sha);
+  firmwareHttp.end();
+  char actualSha256[65];
+  for (uint8_t i = 0; i < sizeof(digest); ++i) snprintf(actualSha256 + i * 2, 3, "%02x", digest[i]);
+  if (writeFailed || remaining != 0 || expectedSha256 != actualSha256 || !Update.end(true)) {
+    Update.abort();
+    Serial.println("Remote firmware update rejected");
+    return;
+  }
+  Serial.printf("Installing remote firmware %s for %s\n", version.c_str(), TFT_REMOTE_UPDATE_CHANNEL);
+  delay(250);
+  ESP.restart();
+}
+
 void fetchSelectedSport() {
   const char *sport = screen == FOOTBALL ? "football" : "hockey";
   HTTPClient http;
@@ -677,6 +750,10 @@ void loop() {
   if (WiFi.status() == WL_CONNECTED) {
     if (!otaReady) startOta();
     if (otaReady) ArduinoOTA.handle();
+    if (lastRemoteUpdateCheck == 0 || millis() - lastRemoteUpdateCheck >= REMOTE_UPDATE_CHECK_MS) {
+      lastRemoteUpdateCheck = millis();
+      checkRemoteFirmwareUpdate();
+    }
     if (screen != HOME && millis() - lastPoll >= POLL_INTERVAL_MS) {
       lastPoll = millis();
       fetchSelectedSport();

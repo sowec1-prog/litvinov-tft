@@ -33,6 +33,15 @@ uvx --from platformio platformio run -e slavia
 
 Pro nový druhý displej se nejdřív nahraje přes USB varianta `slavia`; potom lze používat OTA v domácí LAN.
 
+## Vzdálené HTTPS OTA
+
+Firmware každých 15 minut (a po prvním připojení Wi-Fi) načte manifest z `litvinov-server`. Je-li pro jeho kanál novější verze, stáhne ji pouze přes HTTPS, porovná SHA-256 součet a teprve potom ji zapíše do OTA partition a restartuje se.
+
+- Sparta používá kanál `sparta`; Slavia kanál `slavia`.
+- Firmware je publikován jako verzovaný soubor v `releases/`; serverový manifest určuje konkrétní verzi, adresu a SHA-256.
+- Router neotevírá žádný příchozí port. TFT pouze samo navazuje odchozí HTTPS spojení, takže může být v jiné domácnosti či zemi.
+- První instalace této funkce zůstává přes USB nebo lokální ArduinoOTA. Poté lze nové verze nasazovat vzdáleně.
+
 ## Wi-Fi a OTA
 
 1. Zkopíruj `firmware/include/config.h.example` jako `firmware/include/config.h`.
