@@ -10,6 +10,7 @@
 #include <time.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_ILI9341.h>
+#include <Adafruit_NeoPixel.h>
 #include <XPT2046_Touchscreen.h>
 #include <U8g2_for_Adafruit_GFX.h>
 #include <ArduinoJson.h>
@@ -33,6 +34,12 @@
 #endif
 #ifndef TFT_FOOTBALL_TEAM_LABEL
 #define TFT_FOOTBALL_TEAM_LABEL "SPARTA"
+#endif
+#ifndef TFT_RGB_LED_PIN
+#define TFT_RGB_LED_PIN 38
+#endif
+#ifndef TFT_RGB_LED_COUNT
+#define TFT_RGB_LED_COUNT 1
 #endif
 
 static constexpr uint32_t POLL_INTERVAL_MS = 30000;
@@ -62,6 +69,8 @@ static_assert(TFT_CS_PIN >= 0 && TFT_DC_PIN >= 0 && TFT_RST_PIN >= 0, "Set TFT c
 Adafruit_ILI9341 tft(TFT_CS_PIN, TFT_DC_PIN, TFT_RST_PIN);
 XPT2046_Touchscreen touch(TOUCH_CS_PIN, TOUCH_IRQ_PIN);
 U8G2_FOR_ADAFRUIT_GFX u8g2;
+// Built-in WS2812B RGB LED on GPIO38 (ESP32-S3-DEV-KIT-N16R8).
+Adafruit_NeoPixel goalLed(TFT_RGB_LED_COUNT, TFT_RGB_LED_PIN, NEO_GRB + NEO_KHZ800);
 
 enum Screen : uint8_t { HOME, HOCKEY, FOOTBALL };
 Screen screen = HOME;
@@ -98,6 +107,12 @@ bool goalAnimationActive = false;
 bool goalByHome = true;
 uint32_t goalAnimationStarted = 0;
 uint32_t lastGoalFrame = 0;
+bool goalLedFlashActive = false;
+uint32_t goalLedFlashStarted = 0;
+uint32_t goalLedFlashColor = 0;
+bool footballScoreBaselineKnown = false;
+int previousFootballFavoriteScore = 0;
+int previousFootballOpponentScore = 0;
 
 int clampMap(int value, int fromLow, int fromHigh, int toLow, int toHigh) {
   const long mapped = map(value, fromLow, fromHigh, toLow, toHigh);
@@ -471,6 +486,48 @@ void drawScreen() {
   needsRedraw = false;
 }
 
+void clearGoalLed() {
+  goalLed.clear();
+  goalLed.show();
+}
+
+void startGoalLedFlash(bool favoriteScored) {
+  // Four short flashes: green for Litvínov/selected football club, red for conceded goal.
+  goalLedFlashColor = favoriteScored ? goalLed.Color(0, 180, 0) : goalLed.Color(210, 0, 0);
+  goalLedFlashStarted = millis();
+  goalLedFlashActive = true;
+}
+
+void updateGoalLed() {
+  if (!goalLedFlashActive) return;
+  constexpr uint32_t STEP_MS = 180;
+  constexpr uint8_t STEPS = 8;  // on/off × four flashes
+  const uint32_t elapsed = millis() - goalLedFlashStarted;
+  if (elapsed >= STEP_MS * STEPS) {
+    goalLedFlashActive = false;
+    clearGoalLed();
+    return;
+  }
+  goalLed.setPixelColor(0, ((elapsed / STEP_MS) % 2 == 0) ? goalLedFlashColor : 0);
+  goalLed.show();
+}
+
+void handleFootballScoreCue() {
+  if (screen != FOOTBALL) return;
+  const bool favoriteIsHome = match.homeCode == TFT_FOOTBALL_TEAM_CODE;
+  const bool favoriteIsAway = match.awayCode == TFT_FOOTBALL_TEAM_CODE;
+  if (!favoriteIsHome && !favoriteIsAway) return;
+  const int favoriteScore = favoriteIsHome ? match.scoreHome : match.scoreAway;
+  const int opponentScore = favoriteIsHome ? match.scoreAway : match.scoreHome;
+  if (footballScoreBaselineKnown) {
+    if (favoriteScore > previousFootballFavoriteScore) startGoalLedFlash(true);
+    else if (opponentScore > previousFootballOpponentScore) startGoalLedFlash(false);
+  }
+  previousFootballFavoriteScore = favoriteScore;
+  previousFootballOpponentScore = opponentScore;
+  footballScoreBaselineKnown = true;
+}
+
 void handleGoalCue() {
   if (screen != HOCKEY) return;
   if (!goalBaselineKnown) {
@@ -481,6 +538,7 @@ void handleGoalCue() {
   if (match.eventId.isEmpty() || match.eventId == previousGoalEventId) return;
   previousGoalEventId = match.eventId;
   if (match.audioCue != "lit_goal" && match.audioCue != "conceded_goal") return;
+  startGoalLedFlash(match.audioCue == "lit_goal");
   goalByHome = match.goalSide != "away";
   goalAnimationStarted = millis();
   goalAnimationActive = true;
@@ -517,12 +575,14 @@ void fetchSelectedSport() {
   match.tablePosition = doc["table_position"] | (screen == HOCKEY ? 10 : 0);
   match.cached = doc["cached"] | false;
   handleGoalCue();
+  handleFootballScoreCue();
   Serial.printf("%s: %s %s-%s %s\n", sport, match.state.c_str(), match.homeCode.c_str(), match.awayCode.c_str(), match.statusText.c_str());
   needsRedraw = true;
 }
 
 void openScreen(Screen next) {
   screen = next;
+  footballScoreBaselineKnown = false;
   if (screen == HOCKEY) {
     goalBaselineKnown = false;
     goalAnimationActive = false;
@@ -593,6 +653,8 @@ void handleTouch() {
 
 void setup() {
   Serial.begin(115200);
+  goalLed.begin();
+  clearGoalLed();
   delay(300);
   SPI.begin(TFT_SCK_PIN, TFT_MISO_PIN, TFT_MOSI_PIN, TFT_CS_PIN);
   tft.begin(40000000);
@@ -609,6 +671,7 @@ void setup() {
 }
 
 void loop() {
+  updateGoalLed();
   handleTouch();
   handleWifiSetup();
   if (WiFi.status() == WL_CONNECTED) {

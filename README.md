@@ -56,3 +56,12 @@ uvx --from platformio platformio run
 ```
 
 Firmware používá samostatné barevné bitmapy týmů pro hokej a fotbal, loga soutěží MOL Cup / Chance Liga, český čas `Europe/Prague` a neblokující hokejovou gólovou animaci.
+
+## RGB signalizace gólu
+
+Vestavěná adresovatelná RGB LED `WS2812B` na `GPIO38` blikne čtyřikrát:
+
+- **zeleně**, když dá gól Litvínov nebo klub zvolený firmwarem (`SPARTA` / `SLAVIA`),
+- **červeně**, když gól dostane.
+
+Hokej používá ověřenou gólovou událost z API. Fotbalová varianta reaguje na změnu skóre z veřejného API při živém zápase.
