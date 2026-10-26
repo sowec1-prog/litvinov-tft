@@ -5,7 +5,8 @@ Samostatný projekt pro barevný dotykový panel ILI9341 `320 × 240` na šířk
 - `firmware/` — klient ESP32-S3, který vykresluje hokej Litvínova a fotbal Sparty nebo Slavie.
 - `firmware/data/logos/` — 14 znaků ELH a 16 znaků Chance Ligy; sady jsou striktně oddělené podle sportu.
 - `assets/` — zdrojové assety a náhledy.
-- `server/` — původní lokální vývojový harness; TFT jej při běžném provozu nepoužívá.
+
+Projekt pro provoz nepoužívá žádný lokální server, bridge ani běžící PC.
 
 ## Architektura
 
