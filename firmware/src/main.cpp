@@ -561,14 +561,7 @@ void drawGame() {
     } else {
       drawUtf8Centered("NÁSLEDUJE", 77, ILI9341_LIGHTGREY);
     }
-  } else if (live) {
-    const String eventText = !match.liveEvent.isEmpty() ? match.liveEvent : match.penaltyIndicator;
-    if (!eventText.isEmpty()) {
-      const uint16_t eventColor = match.liveEventCode == "LIT" || eventText.indexOf("LIT") >= 0 ? LIME : ILI9341_ORANGE;
-      drawAsciiCentered(eventText, 77, 1, eventColor);
-    }
   }
-
   drawTeamLogo(45, 92, match.homeLogo, match.homeCode, screen == HOCKEY ? LIME : LIT_RED);
   drawTeamLogo(215, 92, match.awayLogo, match.awayCode, ILI9341_WHITE);
   if (live || finished) {
@@ -577,7 +570,11 @@ void drawGame() {
     drawAsciiCentered("VS", 113, 3, ILI9341_LIGHTGREY);
   }
   tft.drawFastHLine(14, 194, 292, LINE);
-  drawAsciiCentered(match.statusText, 202, 2, ILI9341_CYAN);
+  const String bottomText = live ? (!match.liveEvent.isEmpty() ? match.liveEvent : match.penaltyIndicator) : match.statusText;
+  const uint16_t bottomColor = live && !bottomText.isEmpty()
+      ? (match.liveEventCode == "LIT" || bottomText.indexOf("LIT") >= 0 ? LIME : ILI9341_ORANGE)
+      : ILI9341_CYAN;
+  if (!bottomText.isEmpty()) drawAsciiCentered(bottomText, 202, 2, bottomColor);
   drawGoalAnimation();
   // Any tap outside < ZPET still forces an immediate API refresh; no on-screen hint.
 }
