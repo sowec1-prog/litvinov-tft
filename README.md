@@ -44,7 +44,7 @@ Firmware po prvním připojení Wi-Fi a potom jednou za 24 hodin načte manifest
 
 ## Sparta: analogový spořič
 
-Pouze profil `sparta` po pěti minutách bez dotyku zobrazí analogové hodiny. Během živého zápasu na aktivní sportovní obrazovce je spořič vypnutý; jakmile živý stav začne, zůstane zobrazen zápas. Libovolný dotyk spořič ukončí. Profil `slavia` se nemění.
+Pouze profil `sparta` po pěti minutách bez dotyku zobrazí vybraný design **A — Klasické Sparta hodiny**: tmavý čistý ciferník, červená hodinová, bílá minutová a zelená sekundová ručička. Během živého zápasu na aktivní sportovní obrazovce je spořič vypnutý; jakmile živý stav začne, zůstane zobrazen zápas. Libovolný dotyk spořič ukončí. Profil `slavia` se nemění.
 
 ## Wi-Fi a OTA
 

@@ -302,10 +302,10 @@ bool shouldShowAnalogClock() {
 
 void drawAnalogClock() {
   tft.fillScreen(BACKGROUND);
-  tft.setTextSize(1);
-  tft.setTextColor(ILI9341_DARKGREY);
-  tft.setCursor(8, 8);
-  tft.print("SPARTA  •  SPORIC");
+  tft.setTextSize(2);
+  tft.setTextColor(LIT_RED);
+  tft.setCursor(12, 12);
+  tft.print("SPARTA PRAHA");
   drawWifiIcon();
 
   struct tm timeinfo;
@@ -317,9 +317,10 @@ void drawAnalogClock() {
   constexpr int cx = 160;
   constexpr int cy = 130;
   constexpr int radius = 88;
-  tft.drawCircle(cx, cy, radius, LINE);
-  tft.drawCircle(cx, cy, radius - 1, PANEL);
-  for (int mark = 0; mark < 60; ++mark) {
+  tft.drawCircle(cx, cy, radius, ILI9341_LIGHTGREY);
+  tft.drawCircle(cx, cy, radius - 1, ILI9341_LIGHTGREY);
+  // Klasický ciferník A zůstává čistý: bez minutových značek.
+  /*
     const float angle = (mark * 6 - 90) * DEG_TO_RAD;
     const int outerX = cx + cosf(angle) * (radius - 4);
     const int outerY = cy + sinf(angle) * (radius - 4);
@@ -329,6 +330,7 @@ void drawAnalogClock() {
     tft.drawLine(innerX, innerY, outerX, outerY, mark % 5 == 0 ? ILI9341_WHITE : LINE);
   }
 
+  */
   const float secondAngle = (timeinfo.tm_sec * 6 - 90) * DEG_TO_RAD;
   const float minuteAngle = ((timeinfo.tm_min + timeinfo.tm_sec / 60.0f) * 6 - 90) * DEG_TO_RAD;
   const float hourAngle = (((timeinfo.tm_hour % 12) + timeinfo.tm_min / 60.0f) * 30 - 90) * DEG_TO_RAD;
