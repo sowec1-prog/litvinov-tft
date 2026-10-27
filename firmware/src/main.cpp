@@ -116,6 +116,11 @@ uint32_t lastTouch = 0;
 uint32_t lastUserActivity = 0;
 uint32_t lastClockRedraw = 0;
 bool analogClockActive = false;
+bool analogClockFrameDrawn = false;
+bool analogClockHandsDrawn = false;
+int previousHourHandX = 0, previousHourHandY = 0;
+int previousMinuteHandX = 0, previousMinuteHandY = 0;
+int previousSecondHandX = 0, previousSecondHandY = 0;
 bool gameFrameDrawn = false;
 bool needsRedraw = true;
 bool otaReady = false;
@@ -302,47 +307,53 @@ bool shouldShowAnalogClock() {
 }
 
 void drawAnalogClock() {
-  tft.fillScreen(BACKGROUND);
-  tft.setTextSize(2);
-  tft.setTextColor(LIT_RED);
-  tft.setCursor(12, 12);
-  tft.print("SPARTA PRAHA");
-  drawWifiIcon();
-
-  struct tm timeinfo;
-  if (!getLocalTime(&timeinfo, 5)) {
-    drawAsciiCentered("CEKAM NA CAS", 108, 2, ILI9341_LIGHTGREY);
-    return;
-  }
-
   constexpr int cx = 160;
   constexpr int cy = 130;
   constexpr int radius = 88;
-  tft.drawCircle(cx, cy, radius, ILI9341_LIGHTGREY);
-  tft.drawCircle(cx, cy, radius - 1, ILI9341_LIGHTGREY);
-  // Klasický ciferník A zůstává čistý: bez minutových značek.
-  /*
-    const float angle = (mark * 6 - 90) * DEG_TO_RAD;
-    const int outerX = cx + cosf(angle) * (radius - 4);
-    const int outerY = cy + sinf(angle) * (radius - 4);
-    const int innerRadius = radius - (mark % 5 == 0 ? 14 : 8);
-    const int innerX = cx + cosf(angle) * innerRadius;
-    const int innerY = cy + sinf(angle) * innerRadius;
-    tft.drawLine(innerX, innerY, outerX, outerY, mark % 5 == 0 ? ILI9341_WHITE : LINE);
+  if (!analogClockFrameDrawn) {
+    tft.fillScreen(BACKGROUND);
+    tft.setTextSize(2);
+    tft.setTextColor(LIT_RED);
+    tft.setCursor(12, 12);
+    tft.print("SPARTA PRAHA");
+    drawWifiIcon();
+    tft.drawCircle(cx, cy, radius, ILI9341_LIGHTGREY);
+    tft.drawCircle(cx, cy, radius - 1, ILI9341_LIGHTGREY);
+    analogClockFrameDrawn = true;
   }
 
-  */
+  struct tm timeinfo;
+  if (!getLocalTime(&timeinfo, 5)) {
+    if (!analogClockHandsDrawn) drawAsciiCentered("CEKAM NA CAS", 108, 2, ILI9341_LIGHTGREY);
+    return;
+  }
+
+  // Odmazávají se pouze minulé ručičky; černý celý displej se už každou sekundu neposílá.
+  if (analogClockHandsDrawn) {
+    tft.drawLine(cx, cy, previousHourHandX, previousHourHandY, BACKGROUND);
+    tft.drawLine(cx, cy, previousMinuteHandX, previousMinuteHandY, BACKGROUND);
+    tft.drawLine(cx, cy, previousSecondHandX, previousSecondHandY, BACKGROUND);
+    tft.fillCircle(cx, cy, 5, BACKGROUND);
+  } else {
+    char date[22];
+    strftime(date, sizeof(date), "%d.%m.%Y", &timeinfo);
+    drawAsciiCentered(date, 224, 1, ILI9341_LIGHTGREY);
+  }
+
   const float secondAngle = (timeinfo.tm_sec * 6 - 90) * DEG_TO_RAD;
   const float minuteAngle = ((timeinfo.tm_min + timeinfo.tm_sec / 60.0f) * 6 - 90) * DEG_TO_RAD;
   const float hourAngle = (((timeinfo.tm_hour % 12) + timeinfo.tm_min / 60.0f) * 30 - 90) * DEG_TO_RAD;
-  tft.drawLine(cx, cy, cx + cosf(hourAngle) * 43, cy + sinf(hourAngle) * 43, LIT_RED);
-  tft.drawLine(cx, cy, cx + cosf(minuteAngle) * 66, cy + sinf(minuteAngle) * 66, ILI9341_WHITE);
-  tft.drawLine(cx, cy, cx + cosf(secondAngle) * 72, cy + sinf(secondAngle) * 72, LIME);
+  previousHourHandX = cx + cosf(hourAngle) * 43;
+  previousHourHandY = cy + sinf(hourAngle) * 43;
+  previousMinuteHandX = cx + cosf(minuteAngle) * 66;
+  previousMinuteHandY = cy + sinf(minuteAngle) * 66;
+  previousSecondHandX = cx + cosf(secondAngle) * 72;
+  previousSecondHandY = cy + sinf(secondAngle) * 72;
+  tft.drawLine(cx, cy, previousHourHandX, previousHourHandY, LIT_RED);
+  tft.drawLine(cx, cy, previousMinuteHandX, previousMinuteHandY, ILI9341_WHITE);
+  tft.drawLine(cx, cy, previousSecondHandX, previousSecondHandY, LIME);
   tft.fillCircle(cx, cy, 5, LIT_RED);
-
-  char date[22];
-  strftime(date, sizeof(date), "%d.%m.%Y", &timeinfo);
-  drawAsciiCentered(date, 224, 1, ILI9341_LIGHTGREY);
+  analogClockHandsDrawn = true;
 }
 
 void drawWifiIcon() {
@@ -782,6 +793,9 @@ void handleTouch() {
 
   if (analogClockActive) {
     analogClockActive = false;
+    analogClockFrameDrawn = false;
+    analogClockHandsDrawn = false;
+    gameFrameDrawn = false;
     needsRedraw = true;
     return;
   }
@@ -866,6 +880,8 @@ void loop() {
   const bool shouldUseClock = shouldShowAnalogClock();
   if (shouldUseClock != analogClockActive) {
     analogClockActive = shouldUseClock;
+    analogClockFrameDrawn = false;
+    analogClockHandsDrawn = false;
     if (!analogClockActive && screen != HOME) gameFrameDrawn = false;
     lastClockRedraw = 0;
     needsRedraw = true;
