@@ -101,6 +101,9 @@ struct MatchData {
   String eventId;
   String audioCue;
   String goalSide;
+  String liveEvent;
+  String liveEventCode;
+  String penaltyIndicator;
   String statusText = "25.10. 17:30";
   String competition;
   int scoreHome = 0;
@@ -558,6 +561,12 @@ void drawGame() {
     } else {
       drawUtf8Centered("NÁSLEDUJE", 77, ILI9341_LIGHTGREY);
     }
+  } else if (live) {
+    const String eventText = !match.liveEvent.isEmpty() ? match.liveEvent : match.penaltyIndicator;
+    if (!eventText.isEmpty()) {
+      const uint16_t eventColor = match.liveEventCode == "LIT" || eventText.indexOf("LIT") >= 0 ? LIME : ILI9341_ORANGE;
+      drawAsciiCentered(eventText, 77, 1, eventColor);
+    }
   }
 
   drawTeamLogo(45, 92, match.homeLogo, match.homeCode, screen == HOCKEY ? LIME : LIT_RED);
@@ -715,8 +724,8 @@ void checkRemoteFirmwareUpdate() {
 
 String visibleMatchKey() {
   return match.state + "|" + match.competition + "|" + match.homeCode + "|" + match.awayCode + "|" +
-      match.homeLogo + "|" + match.awayLogo + "|" + match.statusText + "|" +
-      String(match.scoreHome) + "|" + String(match.scoreAway) + "|" + String(match.tablePosition);
+      match.homeLogo + "|" + match.awayLogo + "|" + match.statusText + "|" + match.liveEvent + "|" +
+      match.liveEventCode + "|" + match.penaltyIndicator + "|" + String(match.scoreHome) + "|" + String(match.scoreAway) + "|" + String(match.tablePosition);
 }
 
 void fetchSelectedSport() {
@@ -743,6 +752,9 @@ void fetchSelectedSport() {
   match.eventId = doc["event_id"] | "";
   match.audioCue = doc["audio_cue"] | "";
   match.goalSide = doc["goal_side"] | "";
+  match.liveEvent = doc["live_event"] | "";
+  match.liveEventCode = doc["live_event_code"] | "";
+  match.penaltyIndicator = doc["penalty_indicator"] | "";
   match.statusText = doc["status_text"] | "";
   if (match.statusText.isEmpty()) match.statusText = "TERMIN CEKA";
   match.scoreHome = doc["score_home"] | 0;
