@@ -41,7 +41,7 @@
 #define TFT_FOOTBALL_TEAM_LABEL "SPARTA"
 #endif
 #ifndef TFT_RGB_LED_PIN
-#define TFT_RGB_LED_PIN 38
+#define TFT_RGB_LED_PIN 48
 #endif
 #ifndef TFT_RGB_LED_COUNT
 #define TFT_RGB_LED_COUNT 1
@@ -86,7 +86,7 @@ static_assert(TFT_CS_PIN >= 0 && TFT_DC_PIN >= 0 && TFT_RST_PIN >= 0, "Set TFT c
 Adafruit_ILI9341 tft(TFT_CS_PIN, TFT_DC_PIN, TFT_RST_PIN);
 XPT2046_Touchscreen touch(TOUCH_CS_PIN, TOUCH_IRQ_PIN);
 U8G2_FOR_ADAFRUIT_GFX u8g2;
-// Built-in WS2812B RGB LED on GPIO38 (ESP32-S3-DEV-KIT-N16R8).
+// RGB test confirmed the TFT WS2812B data line is GPIO48.
 Adafruit_NeoPixel goalLed(TFT_RGB_LED_COUNT, TFT_RGB_LED_PIN, NEO_GRB + NEO_KHZ800);
 
 enum Screen : uint8_t { HOME, HOCKEY, FOOTBALL };
@@ -104,6 +104,7 @@ struct MatchData {
   String liveEvent;
   String liveEventCode;
   String penaltyIndicator;
+  String penaltyText;
   String statusText = "25.10. 17:30";
   String competition;
   int scoreHome = 0;
@@ -570,7 +571,10 @@ void drawGame() {
     drawAsciiCentered("VS", 113, 3, ILI9341_LIGHTGREY);
   }
   tft.drawFastHLine(14, 194, 292, LINE);
-  const String bottomText = live ? (!match.liveEvent.isEmpty() ? match.liveEvent : match.penaltyIndicator) : match.statusText;
+  const bool periodBreak = match.liveEvent.indexOf("PRESTAVKA") >= 0 || match.liveEvent.indexOf("KOMERCNI") >= 0;
+  const String bottomText = live
+      ? (periodBreak ? match.liveEvent : (!match.penaltyText.isEmpty() ? match.penaltyText : (!match.liveEvent.isEmpty() ? match.liveEvent : match.penaltyIndicator)))
+      : match.statusText;
   const uint16_t bottomColor = live && !bottomText.isEmpty()
       ? (match.liveEventCode == "LIT" || bottomText.indexOf("LIT") >= 0 ? LIME : ILI9341_ORANGE)
       : ILI9341_CYAN;
@@ -722,7 +726,7 @@ void checkRemoteFirmwareUpdate() {
 String visibleMatchKey() {
   return match.state + "|" + match.competition + "|" + match.homeCode + "|" + match.awayCode + "|" +
       match.homeLogo + "|" + match.awayLogo + "|" + match.statusText + "|" + match.liveEvent + "|" +
-      match.liveEventCode + "|" + match.penaltyIndicator + "|" + String(match.scoreHome) + "|" + String(match.scoreAway) + "|" + String(match.tablePosition);
+      match.liveEventCode + "|" + match.penaltyIndicator + "|" + match.penaltyText + "|" + String(match.scoreHome) + "|" + String(match.scoreAway) + "|" + String(match.tablePosition);
 }
 
 void fetchSelectedSport() {
@@ -752,6 +756,7 @@ void fetchSelectedSport() {
   match.liveEvent = doc["live_event"] | "";
   match.liveEventCode = doc["live_event_code"] | "";
   match.penaltyIndicator = doc["penalty_indicator"] | "";
+  match.penaltyText = doc["penalty_text"] | "";
   match.statusText = doc["status_text"] | "";
   if (match.statusText.isEmpty()) match.statusText = "TERMIN CEKA";
   match.scoreHome = doc["score_home"] | 0;
