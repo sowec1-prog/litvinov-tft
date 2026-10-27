@@ -116,6 +116,7 @@ uint32_t lastTouch = 0;
 uint32_t lastUserActivity = 0;
 uint32_t lastClockRedraw = 0;
 bool analogClockActive = false;
+bool gameFrameDrawn = false;
 bool needsRedraw = true;
 bool otaReady = false;
 bool otaConfigReported = false;
@@ -516,10 +517,16 @@ void drawGoalAnimation() {
 }
 
 void drawGame() {
-  tft.fillScreen(BACKGROUND);
-  drawTopBar();
-  tft.fillRoundRect(5, 33, 58, 22, 5, PANEL);
-  tft.setTextSize(1); tft.setTextColor(ILI9341_WHITE); tft.setCursor(11, 41); tft.print("< ZPET");
+  // Kreslit celý rám pouze při přechodu na sportovní obrazovku.
+  // Při běžné obnově API se mění jen obsahová plocha, takže TFT nebliká.
+  if (!gameFrameDrawn) {
+    tft.fillScreen(BACKGROUND);
+    drawTopBar();
+    tft.fillRoundRect(5, 33, 58, 22, 5, PANEL);
+    tft.setTextSize(1); tft.setTextColor(ILI9341_WHITE); tft.setCursor(11, 41); tft.print("< ZPET");
+    gameFrameDrawn = true;
+  }
+  tft.fillRect(0, 56, 320, 184, BACKGROUND);
 
   const bool live = match.state == "live";
   const bool finished = match.state == "finished";
@@ -687,6 +694,12 @@ void checkRemoteFirmwareUpdate() {
   ESP.restart();
 }
 
+String visibleMatchKey() {
+  return match.state + "|" + match.competition + "|" + match.homeCode + "|" + match.awayCode + "|" +
+      match.homeLogo + "|" + match.awayLogo + "|" + match.statusText + "|" +
+      String(match.scoreHome) + "|" + String(match.scoreAway);
+}
+
 void fetchSelectedSport() {
   const char *sport = screen == FOOTBALL ? "football" : "hockey";
   HTTPClient http;
@@ -701,6 +714,7 @@ void fetchSelectedSport() {
   JsonDocument doc;
   const DeserializationError error = deserializeJson(doc, responseBody);
   if (error) { match.statusText = "JSON " + String(error.c_str()); needsRedraw = true; return; }
+  const String beforeRender = visibleMatchKey();
   match.state = doc["state"] | "scheduled";
   match.competition = doc["competition"] | "";
   match.homeCode = doc["home"]["code"] | (screen == HOCKEY ? "LIT" : TFT_FOOTBALL_TEAM_CODE);
@@ -719,11 +733,12 @@ void fetchSelectedSport() {
   handleGoalCue();
   handleFootballScoreCue();
   Serial.printf("%s: %s %s-%s %s\n", sport, match.state.c_str(), match.homeCode.c_str(), match.awayCode.c_str(), match.statusText.c_str());
-  needsRedraw = true;
+  needsRedraw = needsRedraw || beforeRender != visibleMatchKey();
 }
 
 void openScreen(Screen next) {
   screen = next;
+  gameFrameDrawn = false;
   footballScoreBaselineKnown = false;
   if (screen == HOCKEY) {
     goalBaselineKnown = false;
@@ -851,6 +866,7 @@ void loop() {
   const bool shouldUseClock = shouldShowAnalogClock();
   if (shouldUseClock != analogClockActive) {
     analogClockActive = shouldUseClock;
+    if (!analogClockActive && screen != HOME) gameFrameDrawn = false;
     lastClockRedraw = 0;
     needsRedraw = true;
   }
