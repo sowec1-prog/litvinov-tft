@@ -11,6 +11,7 @@
 #include <Preferences.h>
 #include <SPI.h>
 #include <time.h>
+#include <math.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_ILI9341.h>
 #include <Adafruit_NeoPixel.h>
@@ -51,8 +52,12 @@
 #ifndef TFT_FIRMWARE_VERSION
 #define TFT_FIRMWARE_VERSION "1.3.0"
 #endif
+#ifndef TFT_ANALOG_CLOCK_SCREENSAVER
+#define TFT_ANALOG_CLOCK_SCREENSAVER 0
+#endif
 
 static constexpr uint32_t POLL_INTERVAL_MS = 30000;
+static constexpr uint32_t IDLE_CLOCK_TIMEOUT_MS = 5UL * 60UL * 1000UL;
 // HTTPS OTA stačí ověřit při startu a pak jednou za 24 hodin.
 static constexpr uint32_t REMOTE_UPDATE_CHECK_MS = 24UL * 60UL * 60UL * 1000UL;
 static constexpr uint16_t TOP_BAR_H = 28;
@@ -108,6 +113,9 @@ MatchData match;
 uint32_t lastPoll = 0;
 uint32_t lastRemoteUpdateCheck = 0;
 uint32_t lastTouch = 0;
+uint32_t lastUserActivity = 0;
+uint32_t lastClockRedraw = 0;
+bool analogClockActive = false;
 bool needsRedraw = true;
 bool otaReady = false;
 bool otaConfigReported = false;
@@ -275,6 +283,63 @@ String clockText() {
   char buffer[18];
   strftime(buffer, sizeof(buffer), "%d.%m. %H:%M", &timeinfo);
   return String(buffer);
+}
+
+void drawWifiIcon();
+
+bool liveMatchScreenActive() {
+  return screen != HOME && match.state == "live";
+}
+
+bool shouldShowAnalogClock() {
+#if TFT_ANALOG_CLOCK_SCREENSAVER
+  return !wifiSetupPortalActive && !liveMatchScreenActive() &&
+      millis() - lastUserActivity >= IDLE_CLOCK_TIMEOUT_MS;
+#else
+  return false;
+#endif
+}
+
+void drawAnalogClock() {
+  tft.fillScreen(BACKGROUND);
+  tft.setTextSize(1);
+  tft.setTextColor(ILI9341_DARKGREY);
+  tft.setCursor(8, 8);
+  tft.print("SPARTA  •  SPORIC");
+  drawWifiIcon();
+
+  struct tm timeinfo;
+  if (!getLocalTime(&timeinfo, 5)) {
+    drawAsciiCentered("CEKAM NA CAS", 108, 2, ILI9341_LIGHTGREY);
+    return;
+  }
+
+  constexpr int cx = 160;
+  constexpr int cy = 130;
+  constexpr int radius = 88;
+  tft.drawCircle(cx, cy, radius, LINE);
+  tft.drawCircle(cx, cy, radius - 1, PANEL);
+  for (int mark = 0; mark < 60; ++mark) {
+    const float angle = (mark * 6 - 90) * DEG_TO_RAD;
+    const int outerX = cx + cosf(angle) * (radius - 4);
+    const int outerY = cy + sinf(angle) * (radius - 4);
+    const int innerRadius = radius - (mark % 5 == 0 ? 14 : 8);
+    const int innerX = cx + cosf(angle) * innerRadius;
+    const int innerY = cy + sinf(angle) * innerRadius;
+    tft.drawLine(innerX, innerY, outerX, outerY, mark % 5 == 0 ? ILI9341_WHITE : LINE);
+  }
+
+  const float secondAngle = (timeinfo.tm_sec * 6 - 90) * DEG_TO_RAD;
+  const float minuteAngle = ((timeinfo.tm_min + timeinfo.tm_sec / 60.0f) * 6 - 90) * DEG_TO_RAD;
+  const float hourAngle = (((timeinfo.tm_hour % 12) + timeinfo.tm_min / 60.0f) * 30 - 90) * DEG_TO_RAD;
+  tft.drawLine(cx, cy, cx + cosf(hourAngle) * 43, cy + sinf(hourAngle) * 43, LIT_RED);
+  tft.drawLine(cx, cy, cx + cosf(minuteAngle) * 66, cy + sinf(minuteAngle) * 66, ILI9341_WHITE);
+  tft.drawLine(cx, cy, cx + cosf(secondAngle) * 72, cy + sinf(secondAngle) * 72, LIME);
+  tft.fillCircle(cx, cy, 5, LIT_RED);
+
+  char date[22];
+  strftime(date, sizeof(date), "%d.%m.%Y", &timeinfo);
+  drawAsciiCentered(date, 224, 1, ILI9341_LIGHTGREY);
 }
 
 void drawWifiIcon() {
@@ -494,6 +559,7 @@ void drawWifiSetupInstructions() {
 
 void drawScreen() {
   if (wifiSetupPortalActive) drawWifiSetupInstructions();
+  else if (analogClockActive) drawAnalogClock();
   else if (screen == HOME) drawHome();
   else drawGame();
   needsRedraw = false;
@@ -694,7 +760,14 @@ void handleTouch() {
   const int x = clampMap(point.x, 250, 3850, 319, 0);
   const int y = clampMap(point.y, 250, 3850, 239, 0);
   lastTouch = millis();
+  lastUserActivity = lastTouch;
   Serial.printf("Touch x=%d y=%d\n", x, y);
+
+  if (analogClockActive) {
+    analogClockActive = false;
+    needsRedraw = true;
+    return;
+  }
 
   if (screen == HOME) {
     if (TOUCH_DIAGNOSTIC) {
@@ -727,6 +800,7 @@ void handleTouch() {
 
 void setup() {
   Serial.begin(115200);
+  lastUserActivity = millis();
   goalLed.begin();
   clearGoalLed();
   delay(300);
@@ -771,6 +845,16 @@ void loop() {
       lastGoalFrame = millis();
       needsRedraw = true;
     }
+  }
+  const bool shouldUseClock = shouldShowAnalogClock();
+  if (shouldUseClock != analogClockActive) {
+    analogClockActive = shouldUseClock;
+    lastClockRedraw = 0;
+    needsRedraw = true;
+  }
+  if (analogClockActive && millis() - lastClockRedraw >= 1000) {
+    lastClockRedraw = millis();
+    needsRedraw = true;
   }
   if (needsRedraw) drawScreen();
 }

@@ -42,6 +42,10 @@ Firmware po prvním připojení Wi-Fi a potom jednou za 24 hodin načte manifest
 - Router neotevírá žádný příchozí port. TFT pouze samo navazuje odchozí HTTPS spojení, takže může být v jiné domácnosti či zemi.
 - První instalace této funkce zůstává přes USB nebo lokální ArduinoOTA. Poté lze nové verze nasazovat vzdáleně.
 
+## Sparta: analogový spořič
+
+Pouze profil `sparta` po pěti minutách bez dotyku zobrazí analogové hodiny. Během živého zápasu na aktivní sportovní obrazovce je spořič vypnutý; jakmile živý stav začne, zůstane zobrazen zápas. Libovolný dotyk spořič ukončí. Profil `slavia` se nemění.
+
 ## Wi-Fi a OTA
 
 1. Zkopíruj `firmware/include/config.h.example` jako `firmware/include/config.h`.
