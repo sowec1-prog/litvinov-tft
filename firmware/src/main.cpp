@@ -129,6 +129,8 @@ uint8_t brightness = 82;
 int debugRawX = 0, debugRawY = 0, debugMapX = 0, debugMapY = 0;
 bool debugTouchSeen = false;
 String previousGoalEventId;
+String lastTopBarClock;
+uint32_t lastTopBarClockCheck = 0;
 bool goalBaselineKnown = false;
 bool goalAnimationActive = false;
 bool goalByHome = true;
@@ -393,8 +395,10 @@ void drawTopBar() {
       tft.print(match.tablePosition);
     }
   }
+  const String currentClock = clockText();
   tft.setCursor(121, 10);
-  tft.print(clockText());
+  tft.print(currentClock);
+  lastTopBarClock = currentClock;
   drawWifiIcon();
 }
 
@@ -535,11 +539,12 @@ void drawGame() {
   // Při běžné obnově API se mění jen obsahová plocha, takže TFT nebliká.
   if (!gameFrameDrawn) {
     tft.fillScreen(BACKGROUND);
-    drawTopBar();
     tft.fillRoundRect(5, 33, 58, 22, 5, PANEL);
     tft.setTextSize(1); tft.setTextColor(ILI9341_WHITE); tft.setCursor(11, 41); tft.print("< ZPET");
     gameFrameDrawn = true;
   }
+  // Lišta se obnovuje i při částečném překreslení: po načtení API tak ukáže správný klub i tabulku.
+  drawTopBar();
   tft.fillRect(0, 56, 320, 184, BACKGROUND);
 
   const bool live = match.state == "live";
@@ -892,6 +897,10 @@ void loop() {
   if (analogClockActive && millis() - lastClockRedraw >= 1000) {
     lastClockRedraw = millis();
     needsRedraw = true;
+  }
+  if (!wifiSetupPortalActive && !analogClockActive && screen != HOME && millis() - lastTopBarClockCheck >= 1000) {
+    lastTopBarClockCheck = millis();
+    if (clockText() != lastTopBarClock) drawTopBar();
   }
   if (needsRedraw) drawScreen();
 }
