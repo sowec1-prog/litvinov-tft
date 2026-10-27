@@ -35,7 +35,7 @@ Pro nový druhý displej se nejdřív nahraje přes USB varianta `slavia`; potom
 
 ## Vzdálené HTTPS OTA
 
-Firmware každých 15 minut (a po prvním připojení Wi-Fi) načte manifest z `litvinov-server`. Je-li pro jeho kanál novější verze, stáhne ji pouze přes HTTPS, porovná SHA-256 součet a teprve potom ji zapíše do OTA partition a restartuje se.
+Firmware po prvním připojení Wi-Fi a potom jednou za 24 hodin načte manifest z `litvinov-server`. Je-li pro jeho kanál novější verze, stáhne ji pouze přes HTTPS, porovná SHA-256 součet a teprve potom ji zapíše do OTA partition a restartuje se.
 
 - Sparta používá kanál `sparta`; Slavia kanál `slavia`.
 - Firmware je publikován jako verzovaný soubor v `releases/`; serverový manifest určuje konkrétní verzi, adresu a SHA-256.

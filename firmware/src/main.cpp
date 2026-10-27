@@ -53,7 +53,8 @@
 #endif
 
 static constexpr uint32_t POLL_INTERVAL_MS = 30000;
-static constexpr uint32_t REMOTE_UPDATE_CHECK_MS = 15UL * 60UL * 1000UL;
+// HTTPS OTA stačí ověřit při startu a pak jednou za 24 hodin.
+static constexpr uint32_t REMOTE_UPDATE_CHECK_MS = 24UL * 60UL * 60UL * 1000UL;
 static constexpr uint16_t TOP_BAR_H = 28;
 static constexpr uint16_t BACKGROUND = ILI9341_BLACK;
 static constexpr uint16_t PANEL = 0x10C4;  // preview CSS #101823
