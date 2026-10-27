@@ -105,7 +105,7 @@ struct MatchData {
   String competition;
   int scoreHome = 0;
   int scoreAway = 0;
-  int tablePosition = 10;
+  int tablePosition = 0;
   bool cached = false;
 };
 MatchData match;
@@ -387,8 +387,11 @@ void drawTopBar() {
     tft.print(" ");
     tft.print(match.tablePosition > 0 ? String("#") + match.tablePosition : "-");
   } else {
-    tft.print("LITVINOV ");
-    tft.print(match.tablePosition);
+    tft.print("LITVINOV");
+    if (match.tablePosition > 0) {
+      tft.print(" ");
+      tft.print(match.tablePosition);
+    }
   }
   tft.setCursor(121, 10);
   tft.print(clockText());
@@ -708,7 +711,7 @@ void checkRemoteFirmwareUpdate() {
 String visibleMatchKey() {
   return match.state + "|" + match.competition + "|" + match.homeCode + "|" + match.awayCode + "|" +
       match.homeLogo + "|" + match.awayLogo + "|" + match.statusText + "|" +
-      String(match.scoreHome) + "|" + String(match.scoreAway);
+      String(match.scoreHome) + "|" + String(match.scoreAway) + "|" + String(match.tablePosition);
 }
 
 void fetchSelectedSport() {
@@ -739,7 +742,7 @@ void fetchSelectedSport() {
   if (match.statusText.isEmpty()) match.statusText = "TERMIN CEKA";
   match.scoreHome = doc["score_home"] | 0;
   match.scoreAway = doc["score_away"] | 0;
-  match.tablePosition = doc["table_position"] | (screen == HOCKEY ? 10 : 0);
+  match.tablePosition = doc["table_position"] | 0;
   match.cached = doc["cached"] | false;
   handleGoalCue();
   handleFootballScoreCue();
@@ -762,7 +765,7 @@ void openScreen(Screen next) {
     match.homeLogo = "litvinov";
     match.awayLogo = "kometa";
     match.statusText = "NACITAM HOKEJ";
-    match.tablePosition = 10;
+    match.tablePosition = 0;
   } else if (screen == FOOTBALL) {
     match = MatchData();
     match.state = "scheduled";
