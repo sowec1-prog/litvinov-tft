@@ -58,6 +58,8 @@
 
 static constexpr uint32_t POLL_INTERVAL_MS = 30000;
 static constexpr uint32_t IDLE_CLOCK_TIMEOUT_MS = 5UL * 60UL * 1000UL;
+// V hodinovém spořiči je podsvit hlavní odběr; live obrazovka se vždy vrátí na uživatelský jas.
+static constexpr uint8_t CLOCK_SAVER_BRIGHTNESS = 8;
 // HTTPS OTA stačí ověřit při startu a pak jednou za 24 hodin.
 static constexpr uint32_t REMOTE_UPDATE_CHECK_MS = 24UL * 60UL * 60UL * 1000UL;
 static constexpr uint16_t TOP_BAR_H = 28;
@@ -156,9 +158,13 @@ bool otaConfigured() {
   return strlen(OTA_PASSWORD) >= 12 && strncmp(OTA_PASSWORD, "CHANGE_ME_", 10) != 0;
 }
 
+void writeBacklight(uint8_t percent) {
+  ledcWrite(0, map(constrain(percent, 0, 100), 0, 100, 0, 255));
+}
+
 void setBrightness(uint8_t percent) {
   brightness = constrain(percent, 20, 100);
-  ledcWrite(0, map(brightness, 0, 100, 0, 255));
+  if (!analogClockActive) writeBacklight(brightness);
 }
 
 void startOta() {
@@ -190,6 +196,8 @@ void startWifi() {
   savedWifiPassword = wifiPreferences.getString("pass", "");
   wifiPreferences.end();
   WiFi.mode(WIFI_STA);
+  // Modem sleep keeps the association but reduces idle radio consumption.
+  WiFi.setSleep(true);
   if (forceWifiSetup) {
     wifiConnectStarted = millis() - WIFI_SETUP_DELAY_MS;
     return;
@@ -904,6 +912,7 @@ void loop() {
     analogClockActive = shouldUseClock;
     analogClockFrameDrawn = false;
     analogClockHandsDrawn = false;
+    writeBacklight(analogClockActive ? CLOCK_SAVER_BRIGHTNESS : brightness);
     if (!analogClockActive && screen != HOME) gameFrameDrawn = false;
     lastClockRedraw = 0;
     needsRedraw = true;
