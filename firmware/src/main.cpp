@@ -60,6 +60,8 @@ static constexpr uint32_t POLL_INTERVAL_MS = 30000;
 static constexpr uint32_t IDLE_CLOCK_TIMEOUT_MS = 5UL * 60UL * 1000UL;
 // V hodinovém spořiči je podsvit hlavní odběr; live obrazovka se vždy vrátí na uživatelský jas.
 static constexpr uint8_t CLOCK_SAVER_BRIGHTNESS = 8;
+// TFT backlight is ramped after boot so it does not overlap a full inrush with Wi-Fi startup.
+static constexpr uint32_t BOOT_BACKLIGHT_RAMP_MS = 1600;
 // HTTPS OTA stačí ověřit při startu a pak jednou za 24 hodin.
 static constexpr uint32_t REMOTE_UPDATE_CHECK_MS = 24UL * 60UL * 60UL * 1000UL;
 static constexpr uint16_t TOP_BAR_H = 28;
@@ -132,6 +134,8 @@ bool needsRedraw = true;
 bool otaReady = false;
 bool otaConfigReported = false;
 uint8_t brightness = 82;
+bool bootBacklightRampActive = false;
+uint32_t bootBacklightRampStarted = 0;
 int debugRawX = 0, debugRawY = 0, debugMapX = 0, debugMapY = 0;
 bool debugTouchSeen = false;
 String previousGoalEventId;
@@ -164,7 +168,18 @@ void writeBacklight(uint8_t percent) {
 
 void setBrightness(uint8_t percent) {
   brightness = constrain(percent, 20, 100);
-  if (!analogClockActive) writeBacklight(brightness);
+  if (!analogClockActive && !bootBacklightRampActive) writeBacklight(brightness);
+}
+
+void updateBootBacklightRamp() {
+  if (!bootBacklightRampActive) return;
+  const uint32_t elapsed = millis() - bootBacklightRampStarted;
+  if (elapsed >= BOOT_BACKLIGHT_RAMP_MS) {
+    bootBacklightRampActive = false;
+    writeBacklight(brightness);
+    return;
+  }
+  writeBacklight(map(elapsed, 0, BOOT_BACKLIGHT_RAMP_MS, 0, brightness));
 }
 
 void startOta() {
@@ -870,16 +885,20 @@ void setup() {
   tft.setRotation(1);
   ledcSetup(0, 5000, 8);
   ledcAttachPin(TFT_BACKLIGHT_PIN, 0);
-  setBrightness(brightness);
+  // Keep the TFT dark through the ESP/Wi-Fi startup peak, then raise it gradually.
+  writeBacklight(0);
   touch.begin(SPI);
   touch.setRotation(1);
   u8g2.begin(tft);
   configTzTime("CET-1CEST,M3.5.0,M10.5.0/3", "pool.ntp.org", "time.nist.gov");
   drawScreen();
   startWifi();
+  bootBacklightRampStarted = millis();
+  bootBacklightRampActive = true;
 }
 
 void loop() {
+  updateBootBacklightRamp();
   updateGoalLed();
   handleTouch();
   handleWifiSetup();
