@@ -11,6 +11,7 @@
 #include <Preferences.h>
 #include <SPI.h>
 #include <time.h>
+#include <esp_sntp.h>
 #include <math.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_ILI9341.h>
@@ -891,6 +892,9 @@ void setup() {
   touch.setRotation(1);
   u8g2.begin(tft);
   configTzTime("CET-1CEST,M3.5.0,M10.5.0/3", "pool.ntp.org", "time.nist.gov");
+  // Keep the RTC accurate without an hourly NTP wake-up: sync at boot, then with the daily OTA check.
+  sntp_set_sync_interval(REMOTE_UPDATE_CHECK_MS);
+  sntp_restart();
   drawScreen();
   startWifi();
   bootBacklightRampStarted = millis();
@@ -907,6 +911,7 @@ void loop() {
     if (otaReady) ArduinoOTA.handle();
     if (lastRemoteUpdateCheck == 0 || millis() - lastRemoteUpdateCheck >= REMOTE_UPDATE_CHECK_MS) {
       lastRemoteUpdateCheck = millis();
+      sntp_restart();
       checkRemoteFirmwareUpdate();
     }
     if (screen != HOME && millis() - lastPoll >= POLL_INTERVAL_MS) {
