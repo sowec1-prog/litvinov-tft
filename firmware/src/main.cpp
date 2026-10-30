@@ -61,6 +61,7 @@ static constexpr uint32_t POLL_INTERVAL_MS = 30000;
 static constexpr uint32_t IDLE_CLOCK_TIMEOUT_MS = 5UL * 60UL * 1000UL;
 // V hodinovém spořiči je podsvit hlavní odběr; live obrazovka se vždy vrátí na uživatelský jas.
 static constexpr uint8_t CLOCK_SAVER_BRIGHTNESS = 8;
+static constexpr uint8_t INTERMISSION_BRIGHTNESS = 35;
 // TFT backlight is ramped after boot so it does not overlap a full inrush with Wi-Fi startup.
 static constexpr uint32_t BOOT_BACKLIGHT_RAMP_MS = 1600;
 // HTTPS OTA stačí ověřit při startu a pak jednou za 24 hodin.
@@ -642,7 +643,9 @@ void drawGame() {
     drawAsciiCentered("VS", 113, 3, ILI9341_LIGHTGREY);
   }
   tft.drawFastHLine(14, 194, 292, LINE);
-  const bool periodBreak = match.liveEvent.indexOf("PRESTAVKA") >= 0 || match.liveEvent.indexOf("KOMERCNI") >= 0;
+  const bool periodBreak = match.liveEvent.indexOf("PRESTAVKA") >= 0 || match.liveEvent.indexOf("KOMERCNI") >= 0 ||
+      match.liveEvent.indexOf("POLOCAS") >= 0;
+  writeBacklight(periodBreak ? INTERMISSION_BRIGHTNESS : brightness);
   const String bottomText = live
       ? (periodBreak ? match.liveEvent : (!match.penaltyText.isEmpty() ? match.penaltyText : (!match.liveEvent.isEmpty() ? match.liveEvent : match.penaltyIndicator)))
       : match.statusText;
