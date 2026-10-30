@@ -80,6 +80,7 @@ DNSServer wifiSetupDns;
 Preferences wifiPreferences;
 bool wifiSetupPortalActive = false;
 bool wifiSetupStarted = false;
+bool wifiSetupPortalSuppressed = false;
 uint32_t wifiConnectStarted = 0;
 bool forceWifiSetup = false;
 String savedWifiSsid;
@@ -289,6 +290,7 @@ void stopWifiSetupPortal() {
 }
 
 void handleWifiSetup() {
+  if (wifiSetupPortalSuppressed) return;
   if (wifiSetupPortalActive) {
     wifiSetupDns.processNextRequest();
     wifiSetupServer.handleClient();
@@ -355,6 +357,8 @@ bool matchWakeWindowActive() {
 
 void pauseWifiForClock() {
   if (clockWifiSuspended) return;
+  wifiSetupPortalSuppressed = true;
+  stopWifiSetupPortal();
   WiFi.disconnect(false, false);
   WiFi.mode(WIFI_OFF);
   otaReady = false;
@@ -364,6 +368,7 @@ void pauseWifiForClock() {
 void resumeWifiAfterClock() {
   if (!clockWifiSuspended) return;
   clockWifiSuspended = false;
+  wifiSetupPortalSuppressed = false;
   startWifi();
   lastPoll = millis() - POLL_INTERVAL_MS;
 }
