@@ -44,7 +44,7 @@ Firmware po prvním připojení Wi-Fi a potom jednou za 24 hodin načte manifest
 
 ## Sparta: analogový spořič
 
-Pouze profil `sparta` po pěti minutách bez dotyku zobrazí vybraný design **A — Klasické Sparta hodiny**: tmavý čistý ciferník, červená hodinová, bílá minutová a zelená sekundová ručička. Během živého zápasu na aktivní sportovní obrazovce je spořič vypnutý; jakmile živý stav začne, zůstane zobrazen zápas. Libovolný dotyk spořič ukončí. Profil `slavia` se nemění.
+Pouze profil `sparta` po pěti minutách bez dotyku zobrazí design **A — Klasické Sparta hodiny**: tmavý ciferník, červená hodinová a bílá minutová ručička. Poté ESP každou minutu hodiny krátce překreslí a mezi tím přejde do deep sleep; Wi‑Fi je vypnutá. Dotyk přes IRQ displeje panel probudí do běžného režimu. Termín příštího zápasu se ukládá před uspáním: deset minut před ním se panel probudí, připojí Wi‑Fi a sleduje data; při live se nikdy neuspává. Pro jistotu se mimo zápas provede krátké síťové obnovení nejpozději po šesti hodinách. Profil `slavia` se nemění.
 
 ## Wi-Fi a OTA
 
@@ -72,7 +72,7 @@ Firmware používá samostatné barevné bitmapy týmů pro hokej a fotbal, loga
 
 ## RGB signalizace gólu
 
-Vestavěná adresovatelná RGB LED `WS2812B` na `GPIO38` blikne čtyřikrát:
+Vestavěná adresovatelná RGB LED `WS2812B` na `GPIO48` blikne čtyřikrát:
 
 - **zeleně**, když dá gól Litvínov nebo klub zvolený firmwarem (`SPARTA` / `SLAVIA`),
 - **červeně**, když gól dostane.
