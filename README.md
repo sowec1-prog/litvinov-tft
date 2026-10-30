@@ -44,7 +44,7 @@ Firmware po prvním připojení Wi-Fi a potom jednou za 24 hodin načte manifest
 
 ## Sparta: analogový spořič
 
-Pouze profil `sparta` po pěti minutách bez dotyku zobrazí design **A — Klasické Sparta hodiny**: tmavý ciferník, červená hodinová a bílá minutová ručička. Poté ESP každou minutu hodiny krátce překreslí a mezi tím přejde do deep sleep; Wi‑Fi je vypnutá. Dotyk přes IRQ displeje panel probudí do běžného režimu. Termín příštího zápasu se ukládá před uspáním: deset minut před ním se panel probudí, připojí Wi‑Fi a sleduje data; při live se nikdy neuspává. Pro jistotu se mimo zápas provede krátké síťové obnovení nejpozději po šesti hodinách. Profil `slavia` se nemění.
+Pouze profil `sparta` po pěti minutách bez dotyku zobrazí design **A — Klasické Sparta hodiny**: tmavý ciferník, červená hodinová a bílá minutová ručička. V hodinovém režimu zůstává displej zapnutý na 8% jasu, ale Wi‑Fi rádio je vypnuté; hodiny se překreslí jednou za minutu. Dotyk hodiny ukončí a obnoví běžnou obrazovku i Wi‑Fi. Deset minut před uloženým termínem zápasu se Wi‑Fi zapne sama a sleduje data; při live se nikdy nevypíná. Profil `slavia` se nemění.
 
 ## Wi-Fi a OTA
 

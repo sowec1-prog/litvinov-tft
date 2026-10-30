@@ -12,7 +12,6 @@
 #include <SPI.h>
 #include <time.h>
 #include <esp_sntp.h>
-#include <esp_sleep.h>
 #include <math.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_ILI9341.h>
@@ -25,7 +24,6 @@
 #include "football_team_logos.h"
 #include "competition_logos.h"
 #include "remote_ota_ca.h"
-#include "sleep_schedule.h"
 #include "config.h"
 
 #ifndef TFT_SETUP_AP_SSID
@@ -67,7 +65,6 @@ static constexpr uint8_t CLOCK_SAVER_BRIGHTNESS = 8;
 static constexpr uint32_t BOOT_BACKLIGHT_RAMP_MS = 1600;
 // HTTPS OTA stačí ověřit při startu a pak jednou za 24 hodin.
 static constexpr uint32_t REMOTE_UPDATE_CHECK_MS = 24UL * 60UL * 60UL * 1000UL;
-static constexpr uint16_t CLOCK_NETWORK_REFRESH_MINUTES = 360;
 static constexpr uint16_t TOP_BAR_H = 28;
 static constexpr uint16_t BACKGROUND = ILI9341_BLACK;
 static constexpr uint16_t PANEL = 0x10C4;  // preview CSS #101823
@@ -98,10 +95,7 @@ U8G2_FOR_ADAFRUIT_GFX u8g2;
 Adafruit_NeoPixel goalLed(TFT_RGB_LED_COUNT, TFT_RGB_LED_PIN, NEO_GRB + NEO_KHZ800);
 
 enum Screen : uint8_t { HOME, HOCKEY, FOOTBALL };
-RTC_DATA_ATTR uint32_t retainedMatchStartEpoch = 0;
-RTC_DATA_ATTR uint8_t retainedScreen = FOOTBALL;
-RTC_DATA_ATTR uint16_t retainedClockSleepMinutes = 0;
-RTC_DATA_ATTR bool retainedClockSleepArmed = false;
+uint32_t retainedMatchStartEpoch = 0;
 Screen screen = HOME;
 
 struct MatchData {
@@ -144,8 +138,7 @@ bool otaConfigReported = false;
 uint8_t brightness = 82;
 bool bootBacklightRampActive = false;
 bool preMatchMonitoring = false;
-bool timerClockWake = false;
-bool clockNetworkRefreshPending = false;
+bool clockWifiSuspended = false;
 uint32_t bootBacklightRampStarted = 0;
 int debugRawX = 0, debugRawY = 0, debugMapX = 0, debugMapY = 0;
 bool debugTouchSeen = false;
@@ -357,24 +350,22 @@ void restoreMatchStartEpoch() {
 bool matchWakeWindowActive() {
   const uint32_t now = currentEpoch();
   if (now < 1700000000UL || retainedMatchStartEpoch == 0) return false;
-  return sleep_schedule::secondsUntilMatchWake(now, retainedMatchStartEpoch) == 0;
+  return retainedMatchStartEpoch <= now + 10UL * 60UL;
 }
 
-void enterClockDeepSleep() {
-  retainedScreen = static_cast<uint8_t>(screen);
-  retainedClockSleepArmed = true;
-  ++retainedClockSleepMinutes;
-  pinMode(TOUCH_IRQ_PIN, INPUT_PULLUP);
-  const uint32_t releaseStarted = millis();
-  while (digitalRead(TOUCH_IRQ_PIN) == LOW && millis() - releaseStarted < 300) delay(10);
+void pauseWifiForClock() {
+  if (clockWifiSuspended) return;
   WiFi.disconnect(false, false);
   WiFi.mode(WIFI_OFF);
-  writeBacklight(CLOCK_SAVER_BRIGHTNESS);
-  esp_sleep_enable_ext0_wakeup(static_cast<gpio_num_t>(TOUCH_IRQ_PIN), 0);
-  esp_sleep_enable_timer_wakeup(uint64_t(sleep_schedule::clockSleepSeconds()) * 1000000ULL);
-  Serial.println("Clock deep sleep");
-  delay(20);
-  esp_deep_sleep_start();
+  otaReady = false;
+  clockWifiSuspended = true;
+}
+
+void resumeWifiAfterClock() {
+  if (!clockWifiSuspended) return;
+  clockWifiSuspended = false;
+  startWifi();
+  lastPoll = millis() - POLL_INTERVAL_MS;
 }
 
 void drawWifiIcon();
@@ -840,10 +831,6 @@ void fetchSelectedSport() {
   match.matchStartEpoch = doc["match_start_epoch"] | 0;
   persistMatchStartEpoch(match.matchStartEpoch);
   preMatchMonitoring = match.state != "live" && matchWakeWindowActive();
-  if (clockNetworkRefreshPending) {
-    retainedClockSleepMinutes = 0;
-    clockNetworkRefreshPending = false;
-  }
   match.cached = doc["cached"] | false;
   handleGoalCue();
   handleFootballScoreCue();
@@ -935,11 +922,6 @@ void handleTouch() {
 
 void setup() {
   Serial.begin(115200);
-  const esp_sleep_wakeup_cause_t wakeCause = esp_sleep_get_wakeup_cause();
-  const bool wokeFromClockSleep = retainedClockSleepArmed &&
-      (wakeCause == ESP_SLEEP_WAKEUP_TIMER || wakeCause == ESP_SLEEP_WAKEUP_EXT0);
-  timerClockWake = wokeFromClockSleep && wakeCause == ESP_SLEEP_WAKEUP_TIMER;
-  if (wokeFromClockSleep && retainedScreen <= FOOTBALL) screen = static_cast<Screen>(retainedScreen);
   lastUserActivity = millis();
   goalLed.begin();
   clearGoalLed();
@@ -958,36 +940,17 @@ void setup() {
   // Keep the RTC accurate without an hourly NTP wake-up: sync at boot, then with the daily OTA check.
   sntp_set_sync_interval(REMOTE_UPDATE_CHECK_MS);
   sntp_restart();
-  restoreMatchStartEpoch();
-  const bool wakeForMatch = timerClockWake && matchWakeWindowActive();
-  const bool wakeForPeriodicRefresh = timerClockWake && retainedClockSleepMinutes >= CLOCK_NETWORK_REFRESH_MINUTES;
-  clockNetworkRefreshPending = wakeForMatch || wakeForPeriodicRefresh;
-  preMatchMonitoring = wakeForMatch;
-  analogClockActive = timerClockWake && !wakeForMatch;
-  analogClockFrameDrawn = false;
-  analogClockHandsDrawn = false;
-  if (analogClockActive) {
-    writeBacklight(CLOCK_SAVER_BRIGHTNESS);
-    drawScreen();
-    if (clockNetworkRefreshPending) {
-      startWifi();
-      lastPoll = millis() - POLL_INTERVAL_MS;
-    }
-  } else {
-    retainedClockSleepArmed = false;
-    drawScreen();
-    startWifi();
-    lastPoll = millis() - POLL_INTERVAL_MS;
-    bootBacklightRampStarted = millis();
-    bootBacklightRampActive = true;
-  }
+  drawScreen();
+  startWifi();
+  bootBacklightRampStarted = millis();
+  bootBacklightRampActive = true;
 }
 
 void loop() {
   updateBootBacklightRamp();
   updateGoalLed();
   handleTouch();
-  handleWifiSetup();
+  if (!analogClockActive) handleWifiSetup();
   if (WiFi.status() == WL_CONNECTED) {
     if (!otaReady) startOta();
     if (otaReady) ArduinoOTA.handle();
@@ -1020,8 +983,7 @@ void loop() {
     analogClockHandsDrawn = false;
     gameFrameDrawn = false;
     needsRedraw = true;
-    startWifi();
-    lastPoll = millis() - POLL_INTERVAL_MS;
+    resumeWifiAfterClock();
   }
   const bool shouldUseClock = shouldShowAnalogClock();
   if (shouldUseClock != analogClockActive) {
@@ -1029,11 +991,15 @@ void loop() {
     analogClockFrameDrawn = false;
     analogClockHandsDrawn = false;
     writeBacklight(analogClockActive ? CLOCK_SAVER_BRIGHTNESS : brightness);
-    if (!analogClockActive && screen != HOME) gameFrameDrawn = false;
+    if (analogClockActive) pauseWifiForClock();
+    else {
+      resumeWifiAfterClock();
+      if (screen != HOME) gameFrameDrawn = false;
+    }
     lastClockRedraw = 0;
     needsRedraw = true;
   }
-  if (analogClockActive && millis() - lastClockRedraw >= sleep_schedule::clockSleepSeconds() * 1000UL) {
+  if (analogClockActive && millis() - lastClockRedraw >= 60000UL) {
     lastClockRedraw = millis();
     needsRedraw = true;
   }
@@ -1042,7 +1008,4 @@ void loop() {
     if (clockText() != lastTopBarClock) drawTopBar();
   }
   if (needsRedraw) drawScreen();
-  if (analogClockActive && !wifiSetupPortalActive && !clockNetworkRefreshPending && !liveMatchScreenActive()) {
-    enterClockDeepSleep();
-  }
 }
