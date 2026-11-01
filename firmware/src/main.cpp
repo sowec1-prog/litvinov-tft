@@ -643,7 +643,10 @@ void drawGame() {
   const uint16_t bottomColor = live && !bottomText.isEmpty()
       ? (match.liveEventCode == "LIT" || bottomText.indexOf("LIT") >= 0 ? LIME : ILI9341_ORANGE)
       : ILI9341_CYAN;
-  if (!bottomText.isEmpty()) drawAsciiCentered(bottomText, 202, 2, bottomColor);
+  if (!bottomText.isEmpty()) {
+    const uint8_t bottomTextSize = periodBreak && bottomText.length() > 24 ? 1 : 2;
+    drawAsciiCentered(bottomText, 202, bottomTextSize, bottomColor);
+  }
   drawGoalAnimation();
   // Any tap outside < ZPET still forces an immediate API refresh; no on-screen hint.
 }
