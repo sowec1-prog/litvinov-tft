@@ -357,21 +357,12 @@ bool matchWakeWindowActive() {
 }
 
 void pauseWifiForClock() {
-  if (clockWifiSuspended) return;
-  wifiSetupPortalSuppressed = true;
-  stopWifiSetupPortal();
-  WiFi.disconnect(false, false);
-  WiFi.mode(WIFI_OFF);
-  otaReady = false;
-  clockWifiSuspended = true;
+  // TFT je napájené ze sítě: spořič smí ztlumit pouze podsvit.
+  // Wi-Fi, veřejné sportovní aktualizace i OTA zůstávají připojené.
 }
 
 void resumeWifiAfterClock() {
-  if (!clockWifiSuspended) return;
-  clockWifiSuspended = false;
-  wifiSetupPortalSuppressed = false;
-  startWifi();
-  lastPoll = millis() - POLL_INTERVAL_MS;
+  // Wi-Fi nebyla při spořiči vypnuta, není co obnovovat.
 }
 
 void drawWifiIcon();
