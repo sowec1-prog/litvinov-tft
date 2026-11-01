@@ -123,6 +123,30 @@ struct MatchData {
 };
 MatchData match;
 
+void persistSelectedScreen() {
+  Preferences uiPreferences;
+  uiPreferences.begin("ui", false);
+  uiPreferences.putUChar("screen", static_cast<uint8_t>(screen));
+  uiPreferences.end();
+}
+
+void restoreSelectedScreen() {
+  Preferences uiPreferences;
+  uiPreferences.begin("ui", true);
+  const uint8_t stored = uiPreferences.getUChar("screen", 0xFF);
+  uiPreferences.end();
+  screen = stored == HOME ? HOME : (stored == FOOTBALL ? FOOTBALL : HOCKEY);
+  if (screen == FOOTBALL) {
+    match.homeCode = TFT_FOOTBALL_TEAM_CODE;
+    match.awayCode = "?";
+    match.homeLogo = TFT_FOOTBALL_TEAM_CODE;
+    match.awayLogo = "";
+    match.statusText = "NACITAM FOTBAL";
+  } else if (screen == HOCKEY) {
+    match.statusText = "NACITAM HOKEJ";
+  }
+}
+
 uint32_t lastPoll = 0;
 uint32_t lastRemoteUpdateCheck = 0;
 uint32_t lastTouch = 0;
@@ -592,13 +616,9 @@ void drawGoalAnimation() {
   const int puckX = goalByHome
       ? map(elapsed, 0, PASS_MS, -76, 320)
       : map(elapsed, 0, PASS_MS, 320, -76);
-  // Home team is displayed left: its puck travels left-to-right; away reverses.
-  const int goalTextX = goalByHome ? puckX - 80 : puckX + 80;
+  // Puk projede obrazem, ale nápis zůstává po celou animaci stabilně viditelný.
   tft.drawRGBBitmap(puckX, 84, kPreviewPuck, 76, 76);
-  tft.setTextColor(goalByHome ? LIME : ILI9341_WHITE);
-  tft.setTextSize(3);
-  tft.setCursor(goalTextX, 108);
-  tft.print("GOOL");
+  drawAsciiCentered("GOOOL!", 66, 3, goalByHome ? LIME : ILI9341_WHITE);
 }
 
 void drawGame() {
@@ -685,8 +705,9 @@ void startGoalLedFlash(bool favoriteScored) {
 
 void updateGoalLed() {
   if (!goalLedFlashActive) return;
-  constexpr uint32_t STEP_MS = 180;
-  constexpr uint8_t STEPS = 8;  // on/off × four flashes
+  // Three one-second flashes: 1 s on, 1 s off, repeated three times.
+  constexpr uint32_t STEP_MS = 1000;
+  constexpr uint8_t STEPS = 6;  // on/off × three flashes
   const uint32_t elapsed = millis() - goalLedFlashStarted;
   if (elapsed >= STEP_MS * STEPS) {
     goalLedFlashActive = false;
@@ -842,6 +863,7 @@ void fetchSelectedSport() {
 
 void openScreen(Screen next) {
   screen = next;
+  persistSelectedScreen();
   gameFrameDrawn = false;
   footballScoreBaselineKnown = false;
   if (screen == HOCKEY) {
@@ -942,6 +964,7 @@ void setup() {
   // Keep the RTC accurate without an hourly NTP wake-up: sync at boot, then with the daily OTA check.
   sntp_set_sync_interval(REMOTE_UPDATE_CHECK_MS);
   sntp_restart();
+  restoreSelectedScreen();
   drawScreen();
   startWifi();
   bootBacklightRampStarted = millis();
