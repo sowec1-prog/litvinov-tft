@@ -60,7 +60,8 @@
 static constexpr uint32_t POLL_INTERVAL_MS = 30000;
 static constexpr uint32_t IDLE_CLOCK_TIMEOUT_MS = 5UL * 60UL * 1000UL;
 // V hodinovém spořiči je podsvit hlavní odběr; live obrazovka se vždy vrátí na uživatelský jas.
-static constexpr uint8_t CLOCK_SAVER_BRIGHTNESS = 8;
+// Hodinový spořič zůstává úspornější než live obrazovka, ale při 60 % je dobře čitelný i přes den.
+static constexpr uint8_t CLOCK_SAVER_BRIGHTNESS = 60;
 static constexpr uint8_t INTERMISSION_BRIGHTNESS = 35;
 // TFT backlight is ramped after boot so it does not overlap a full inrush with Wi-Fi startup.
 static constexpr uint32_t BOOT_BACKLIGHT_RAMP_MS = 1600;
