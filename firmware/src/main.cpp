@@ -513,7 +513,11 @@ void drawFootball(int cx, int cy) {
 void drawHome() {
   tft.fillScreen(BACKGROUND);
   drawTopBar();
+#ifdef TFT_HOME_TITLE_UTF8
+  drawUtf8Centered(TFT_HOME_TITLE_UTF8, 56, ILI9341_WHITE);
+#else
   drawAsciiCentered("VYBER SPORT", 40, 2, ILI9341_WHITE);
+#endif
 
   tft.fillRoundRect(12, 62, 140, 112, 10, PANEL);
   tft.fillRoundRect(168, 62, 140, 112, 10, PANEL);
