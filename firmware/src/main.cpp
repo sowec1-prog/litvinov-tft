@@ -180,6 +180,7 @@ uint32_t lastGoalFrame = 0;
 bool goalLedFlashActive = false;
 uint32_t goalLedFlashStarted = 0;
 uint32_t goalLedFlashColor = 0;
+uint8_t goalLedFlashStep = 0xFF;
 bool footballScoreBaselineKnown = false;
 int previousFootballFavoriteScore = 0;
 int previousFootballOpponentScore = 0;
@@ -701,6 +702,7 @@ void startGoalLedFlash(bool favoriteScored) {
   // Four short flashes: green for Litvínov/selected football club, red for conceded goal.
   goalLedFlashColor = favoriteScored ? goalLed.Color(0, 180, 0) : goalLed.Color(210, 0, 0);
   goalLedFlashStarted = millis();
+  goalLedFlashStep = 0xFF;
   goalLedFlashActive = true;
 }
 
@@ -715,7 +717,10 @@ void updateGoalLed() {
     clearGoalLed();
     return;
   }
-  goalLed.setPixelColor(0, ((elapsed / STEP_MS) % 2 == 0) ? goalLedFlashColor : 0);
+  const uint8_t step = elapsed / STEP_MS;
+  if (step == goalLedFlashStep) return;
+  goalLedFlashStep = step;
+  goalLed.setPixelColor(0, (step % 2 == 0) ? goalLedFlashColor : 0);
   goalLed.show();
 }
 
@@ -752,6 +757,19 @@ void handleGoalCue() {
   lastGoalFrame = 0;
 }
 
+bool isStrictlyNewerFirmwareVersion(const String &candidate, const String &current) {
+  int candidateMajor = -1, candidateMinor = -1, candidatePatch = -1;
+  int currentMajor = -1, currentMinor = -1, currentPatch = -1;
+  char trailing = '\0';
+  if (sscanf(candidate.c_str(), "%d.%d.%d%c", &candidateMajor, &candidateMinor, &candidatePatch, &trailing) != 3 ||
+      sscanf(current.c_str(), "%d.%d.%d%c", &currentMajor, &currentMinor, &currentPatch, &trailing) != 3) return false;
+  if (candidateMajor < 0 || candidateMinor < 0 || candidatePatch < 0 ||
+      currentMajor < 0 || currentMinor < 0 || currentPatch < 0) return false;
+  if (candidateMajor != currentMajor) return candidateMajor > currentMajor;
+  if (candidateMinor != currentMinor) return candidateMinor > currentMinor;
+  return candidatePatch > currentPatch;
+}
+
 void checkRemoteFirmwareUpdate() {
   if (wifiSetupPortalActive) return;
   const String manifestUrl = String(TFT_API_BASE_URL) + "/api/v1/tft/firmware?channel=" + TFT_REMOTE_UPDATE_CHANNEL + "&current=" + TFT_FIRMWARE_VERSION;
@@ -769,7 +787,8 @@ void checkRemoteFirmwareUpdate() {
   const String version = manifest["version"] | "";
   const String binaryUrl = manifest["url"] | "";
   const String expectedSha256 = manifest["sha256"] | "";
-  if (version.isEmpty() || binaryUrl.indexOf("https://") != 0 || expectedSha256.length() != 64) return;
+  if (version.isEmpty() || !isStrictlyNewerFirmwareVersion(version, TFT_FIRMWARE_VERSION) ||
+      binaryUrl.indexOf("https://") != 0 || expectedSha256.length() != 64) return;
 
   WiFiClientSecure firmwareClient;
   firmwareClient.setCACert(kRemoteOtaRootCa);
@@ -1034,4 +1053,5 @@ void loop() {
     if (clockText() != lastTopBarClock) drawTopBar();
   }
   if (needsRedraw) drawScreen();
+  delay(5);  // Keep OTA/touch responsive while avoiding a busy 240 MHz idle loop.
 }
